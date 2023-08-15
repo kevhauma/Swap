@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from 'react-query';
-import { getGames, createGame } from '@/data-access';
+import { getGames, createGame } from '@/feature-data-access';
 
 export const Lobby = () => {
   const { data: gamesFetchData } = useQuery('games', getGames);
