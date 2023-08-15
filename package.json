@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "api:start": "node ./swish-server/index",
-    "dev": "cd ./swish-client && next dev",
-    "build": "cd ./swish-client && next build",
-    "start": "cd ./swish-client && next start",
-    "lint": "cd ./swish-client && next lint",
+    "api:start": "node ./swap-server/index",
+    "dev": "cd ./swap-client && next dev",
+    "build": "cd ./swap-client && next build",
+    "start": "cd ./swap-client && next start",
+    "lint": "cd ./swap-client && next lint",
     "prepare": "husky install"
   },
   "keywords": [],
