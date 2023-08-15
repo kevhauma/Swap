@@ -1,0 +1,6 @@
+**/.next
+**/*.json
+**/*.txt
+**/*.md
+**/.git
+**/public
