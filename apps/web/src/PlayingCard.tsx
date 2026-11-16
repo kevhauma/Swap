@@ -2,7 +2,7 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { cardName, isFaceUp, isRed, type Card, type CardView } from '@swap/engine';
 
-const SIZES = { sm: 'w-11', md: 'w-16 sm:w-20' };
+const SIZES = { sm: 'w-9 sm:w-11', md: 'w-16 sm:w-20' };
 
 function Face({ card }: { card: Card }) {
   return card.rank === 'JOKER' ? (
@@ -47,9 +47,9 @@ export function PlayingCard({
       onClick={onClick}
       aria-label={face ? cardName(face) : 'Face-down card'}
       transition={{ type: 'spring', stiffness: 220, damping: 26 }}
-      className={`relative aspect-[167/243] shrink-0 rounded-md perspective-midrange ${SIZES[size]} ${
-        onClick ? 'ring-2 ring-turn/70 hover:ring-turn' : ''
-      } ${selected ? '-translate-y-2 ring-4 ring-turn' : ''}`}
+      className={`relative aspect-[167/243] shrink-0 rounded-md shadow-[0_2px_2px_rgb(10_30_15/0.35),0_7px_9px_-2px_rgb(10_30_15/0.3)] perspective-midrange ${SIZES[size]} ${
+        onClick ? 'chalk-loop' : ''
+      } ${selected ? '-translate-y-2 outline-3 outline-offset-2 outline-chalk' : ''}`}
     >
       <motion.div
         className="absolute inset-0 transform-3d"
@@ -69,7 +69,7 @@ export function PlayingCard({
 export function Slot({ label, size = 'md' }: { label: string; size?: keyof typeof SIZES }) {
   return (
     <div
-      className={`flex aspect-[167/243] shrink-0 items-center justify-center rounded-md border-2 border-dashed border-slot/40 text-xs text-slot/70 ${SIZES[size]}`}
+      className={`flex aspect-[167/243] shrink-0 items-center justify-center rounded-md border-2 border-dashed border-chalk/40 text-sm text-chalk/70 ${SIZES[size]}`}
     >
       {label}
     </div>

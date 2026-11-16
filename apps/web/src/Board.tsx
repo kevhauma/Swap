@@ -24,9 +24,34 @@ const POWER_LABEL = {
   peekStack: 'look at the top 3 of the stack',
 };
 
-const button =
-  'rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-40 bg-slot text-table-deep hover:bg-white';
-const activeButton = 'rounded-full px-4 py-2 text-sm font-semibold bg-turn text-table-deep';
+const button = 'wood';
+
+/** Hand-drawn chalk loop around whoever's turn it is. */
+const ChalkLoop = () => (
+  <svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden className="absolute -inset-x-2.5 -inset-y-2 size-[calc(100%+20px)] overflow-visible">
+    <path
+      d="M8 22C6 8 40 3 62 5s34 8 32 18-30 14-54 13S4 30 10 16c3-5 10-8 18-9"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      vectorEffect="non-scaling-stroke"
+    />
+  </svg>
+);
+
+const ChalkUnderline = () => (
+  <svg viewBox="0 0 100 7" preserveAspectRatio="none" aria-hidden className="absolute -inset-x-1.5 -bottom-1 h-[7px] w-[calc(100%+12px)] opacity-80">
+    <path d="M2 4c18-3 34 1 50-1s30-1 46 1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg width="18" height="20" viewBox="0 0 22 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+    <path d="M6 11V7a5 5 0 0 1 10 0v4" />
+    <path d="M3.5 11.5c5-.6 10-.5 15 .2l-.4 9.6c-5 .6-9.7.5-14.3-.2z" />
+  </svg>
+);
 
 export function Board({
   view,
@@ -117,18 +142,26 @@ export function Board({
                       : 'Tap one of your cards to look at it',
                 }[step.kind];
 
-  const renderHand = (player: PlayerView, size: 'sm' | 'md') => (
-    <section key={player.id} className={`flex flex-col items-center gap-2 ${player.locked ? 'opacity-70' : ''}`}>
-      <h2 className="flex items-center gap-2 text-sm">
-        <span
-          aria-label={view.turn === player.id ? 'Their turn' : undefined}
-          className={`size-3 rounded-full ${view.turn === player.id ? 'bg-turn' : 'bg-transparent'}`}
-        />
-        {player === me ? 'You' : player.name}
-        {player.locked && <span title="Swish-swished: locked">🔒</span>}
-        {player.score !== undefined && <span className="font-bold text-turn">{player.score} pts</span>}
-      </h2>
-      <div className="flex flex-wrap justify-center gap-2">
+  const renderHand = (player: PlayerView, size: 'sm' | 'md') => {
+    const theirTurn = view.turn === player.id;
+    return (
+      <section key={player.id} className="flex flex-col items-center gap-3">
+        <h2 className={`flex items-center gap-3 font-bold ${size === 'md' ? 'text-2xl' : 'text-xl'}`}>
+          <span className={`relative ${theirTurn ? 'px-3' : ''}`}>
+            {theirTurn ? <ChalkLoop /> : player !== me && <ChalkUnderline />}
+            {player === me ? 'You' : player.name}
+            {theirTurn && <span className="sr-only"> (their turn)</span>}
+          </span>
+          {theirTurn && player === me && <span className="-rotate-6 text-base font-normal">your go!</span>}
+          {player.locked && (
+            <span title="Swish-swished: locked" className="flex rotate-6 items-center gap-1 text-sm">
+              <LockIcon />
+              locked
+            </span>
+          )}
+          {player.score !== undefined && <span className="text-turn">{player.score} pts</span>}
+        </h2>
+        <div className={`fan flex flex-wrap justify-center ${size === 'sm' ? 'gap-0.5' : 'gap-2'} ${player.locked ? 'opacity-70 saturate-50' : ''}`}>
         {player.cards.map((card) => (
           <PlayingCard
             key={card.id}
@@ -143,10 +176,11 @@ export function Board({
             }
           />
         ))}
-        {!player.cards.length && <Slot label="no cards" size={size} />}
-      </div>
-    </section>
-  );
+          {!player.cards.length && <Slot label="no cards" size={size} />}
+        </div>
+      </section>
+    );
+  };
 
   const ended = view.phase === 'ended';
   const lowest = Math.min(...view.players.map((p) => p.score ?? Infinity));
@@ -155,106 +189,117 @@ export function Board({
     setMode(mode.kind === kind ? { kind: 'idle' } : { kind });
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-xl flex-col gap-6 px-4 py-4">
-      <div className="flex flex-col gap-4">{opponents.map((p) => renderHand(p, 'sm'))}</div>
-
-      <div className="flex items-center justify-center gap-4">
-        <div className="relative flex flex-col items-center gap-1">
-          {view.stackTopId ? (
-            <PlayingCard
-              card={{ id: view.stackTopId }}
-              onClick={myTurn && step.kind === 'choose' ? () => act({ type: 'draw' }) : undefined}
-            />
-          ) : (
-            <Slot label="empty" />
-          )}
-          <span className="text-xs text-slot">{view.stackCount} left</span>
+    <div className="min-h-dvh bg-rim p-2">
+      <div className="felt mx-auto flex min-h-[calc(100dvh-1rem)] max-w-xl flex-col gap-6 px-4 py-5">
+        <div className={`grid gap-x-3 gap-y-6 ${opponents.length > 1 ? 'grid-cols-2' : ''}`}>
+          {opponents.map((p) => renderHand(p, 'sm'))}
         </div>
-        {step.kind === 'drawn' && (
-          <PlayingCard card={step.card} selected={myTurn} />
-        )}
-        <div className="flex flex-col items-center gap-1">
-          {open ? (
-            <PlayingCard
-              key={open.id}
-              card={open}
-              onClick={myTurn && mode.kind === 'idle' && step.kind === 'choose' ? () => toggle('takeOpen') : undefined}
-            />
-          ) : (
-            <Slot label="open" />
+
+        <div className="flex items-end justify-center gap-7">
+          <div className="relative flex flex-col items-center gap-1">
+            {view.stackTopId ? (
+              <PlayingCard
+                card={{ id: view.stackTopId }}
+                onClick={myTurn && step.kind === 'choose' ? () => act({ type: 'draw' }) : undefined}
+              />
+            ) : (
+              <Slot label="empty" />
+            )}
+            <span className="text-chalk/70">stack ({view.stackCount})</span>
+          </div>
+          {step.kind === 'drawn' && (
+            <PlayingCard card={step.card} selected={myTurn} />
           )}
-          <span className="text-xs text-slot">open card</span>
+          <div className="flex flex-col items-center gap-1">
+            {open ? (
+              <PlayingCard
+                key={open.id}
+                card={open}
+                onClick={myTurn && mode.kind === 'idle' && step.kind === 'choose' ? () => toggle('takeOpen') : undefined}
+              />
+            ) : (
+              <Slot label="open" />
+            )}
+            <span className="text-chalk/70">open card</span>
+          </div>
         </div>
-      </div>
 
-      <p className="text-center font-medium" role="status">
-        {hint}
-      </p>
-
-      {renderHand(me, 'md')}
-
-      <div className="flex flex-wrap justify-center gap-2">
-        {canMatch && (
-          <button className={mode.kind === 'match' || mode.kind === 'matchGive' ? activeButton : button} onClick={() => toggle('match')}>
-            Match
-          </button>
-        )}
-        {myTurn && step.kind === 'choose' && (
-          <>
-            <button className={button} onClick={() => act({ type: 'draw' })} disabled={!view.stackCount}>
-              Draw
-            </button>
-            <button className={mode.kind === 'takeOpen' ? activeButton : button} onClick={() => toggle('takeOpen')}>
-              Take open
-            </button>
-            <button
-              className={button}
-              onClick={() => act({ type: 'swish' })}
-              disabled={view.turnsTaken < view.players.length}
-              title={view.turnsTaken < view.players.length ? 'Everyone needs one turn first' : undefined}
-            >
-              Swish-swish
-            </button>
-          </>
-        )}
-        {myTurn && step.kind === 'drawn' && (
-          <button className={button} onClick={() => act({ type: 'discardDrawn' })}>
-            {drawnPower ? 'Use it' : 'Put it down'}
-          </button>
-        )}
-        {myTurn && step.kind === 'openSwap' && step.own && step.other && (
-          <>
-            <button className={button} onClick={() => act({ type: 'openSwap', swap: true })}>
-              Swap
-            </button>
-            <button className={button} onClick={() => act({ type: 'openSwap', swap: false })}>
-              Keep
-            </button>
-          </>
-        )}
-        {myTurn && ['peekOwn', 'spy', 'blindSwap', 'openSwap'].includes(step.kind) && (
-          <button className={button} onClick={() => act({ type: 'skip' })}>
-            Skip
-          </button>
-        )}
-        {ended && (
-          <button className={activeButton} onClick={playAgain}>
-            Play again
-          </button>
-        )}
-      </div>
-
-      {ended && (
-        <p className="text-center text-lg font-bold text-turn">
-          {winners.join(' & ')} {winners.length > 1 || winners[0] === 'You' ? 'win' : 'wins'} with {lowest}
+        <p className="-rotate-1 px-3 text-center text-2xl font-bold text-balance" role="status">
+          {hint}
         </p>
-      )}
 
-      <ol className="mt-auto space-y-0.5 text-xs text-slot/80" aria-label="Game log">
-        {view.log.slice(-4).map((line, i) => (
-          <li key={view.log.length - 4 + i}>{line}</li>
-        ))}
-      </ol>
+        {renderHand(me, 'md')}
+
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
+          {canMatch && (
+            <button className={button} aria-pressed={mode.kind === 'match' || mode.kind === 'matchGive'} onClick={() => toggle('match')}>
+              Match
+            </button>
+          )}
+          {myTurn && step.kind === 'choose' && (
+            <>
+              <button className={button} onClick={() => act({ type: 'draw' })} disabled={!view.stackCount}>
+                Draw
+              </button>
+              <button className={button} aria-pressed={mode.kind === 'takeOpen'} onClick={() => toggle('takeOpen')}>
+                Take open
+              </button>
+              <button
+                className="chip"
+                onClick={() => act({ type: 'swish' })}
+                disabled={view.turnsTaken < view.players.length}
+                title={view.turnsTaken < view.players.length ? 'Everyone needs one turn first' : undefined}
+              >
+                <span>
+                  Swish
+                  <br />
+                  swish
+                </span>
+              </button>
+            </>
+          )}
+          {myTurn && step.kind === 'drawn' && (
+            <button className={button} onClick={() => act({ type: 'discardDrawn' })}>
+              {drawnPower ? 'Use it' : 'Put it down'}
+            </button>
+          )}
+          {myTurn && step.kind === 'openSwap' && step.own && step.other && (
+            <>
+              <button className={button} onClick={() => act({ type: 'openSwap', swap: true })}>
+                Swap
+              </button>
+              <button className={button} onClick={() => act({ type: 'openSwap', swap: false })}>
+                Keep
+              </button>
+            </>
+          )}
+          {myTurn && ['peekOwn', 'spy', 'blindSwap', 'openSwap'].includes(step.kind) && (
+            <button className={button} onClick={() => act({ type: 'skip' })}>
+              Skip
+            </button>
+          )}
+          {ended && (
+            <button className={button} onClick={playAgain}>
+              Play again
+            </button>
+          )}
+        </div>
+
+        {ended && (
+          <p className="text-center text-3xl font-bold text-turn">
+            {winners.join(' & ')} {winners.length > 1 || winners[0] === 'You' ? 'win' : 'wins'} with {lowest}
+          </p>
+        )}
+
+        <ol className="mt-auto" aria-label="Game log">
+          {view.log.slice(-4).map((line, i, shown) => (
+            // Older lines fade like rubbed-out chalk.
+            <li key={view.log.length - shown.length + i} style={{ opacity: 1 - (shown.length - 1 - i) * 0.2 }}>
+              {line}
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }
