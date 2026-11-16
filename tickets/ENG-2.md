@@ -25,11 +25,11 @@ documented 6.
 
 ## Acceptance criteria
 
-- [ ] The engine exports the maximum; `createGame` rejects 7+ players with a `RuleError`.
-- [ ] The server's seat limit and the lobby's "Add bot" button use that export, no literal 8.
-- [ ] Engine test covers: 6 players start, 7 are rejected.
-- [ ] `npm run check` passes.
-- [ ] Verified live in the browser: "Add bot" disables at 6 seats.
+- [x] The engine exports the maximum; `createGame` rejects 7+ players with a `RuleError`. (`MAX_PLAYERS = 6` exported from `packages/engine/src/game.ts`, checked in `createGame`)
+- [x] The server's seat limit and the lobby's "Add bot" button use that export, no literal 8. (`apps/server/src/index.ts` join + `addBot` use `MAX_PLAYERS`, `MAX_SEATS` removed; `apps/web/src/App.tsx` button uses `MAX_PLAYERS`)
+- [x] Engine test covers: 6 players start, 7 are rejected. (`game.test.ts` › setup › "seats up to 6 players and rejects more")
+- [x] `npm run check` passes. (tsc clean, vitest 28/28 passed)
+- [ ] Verified live in the browser: "Add bot" disables at 6 seats. — not ticked: browser verification pending
 
 ## Notes
 

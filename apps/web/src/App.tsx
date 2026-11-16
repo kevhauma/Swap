@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { MAX_PLAYERS } from '@swap/engine';
 import { Board } from './Board.tsx';
 import { hasToken, storage, useSwap } from './useSwap.ts';
 
@@ -120,7 +121,7 @@ export function App() {
         Hard mode (3s cost a card, 6s show the top of the stack)
       </label>
       <div className="flex gap-2">
-        <button className={`${button} flex-1`} onClick={() => send({ type: 'addBot' })} disabled={room.seats.length >= 8}>
+        <button className={`${button} flex-1`} onClick={() => send({ type: 'addBot' })} disabled={room.seats.length >= MAX_PLAYERS}>
           Add bot
         </button>
         <button

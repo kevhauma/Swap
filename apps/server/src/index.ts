@@ -4,6 +4,7 @@ import {
   apply,
   botAction,
   createGame,
+  MAX_PLAYERS,
   remember,
   RuleError,
   viewFor,
@@ -32,7 +33,6 @@ interface Room {
 }
 
 const PORT = Number(process.env.PORT ?? 3001);
-const MAX_SEATS = 8;
 const BOT_DELAY_MS = 1200;
 const EMPTY_ROOM_TTL_MS = 10 * 60_000;
 const HEARTBEAT_MS = 30_000;
@@ -101,7 +101,7 @@ const join = (socket: WebSocket, msg: Extract<ClientMessage, { type: 'join' }>):
   let seat = room.seats.find((s) => !s.bot && s.token === msg.token);
   if (!seat) {
     if (room.game && room.game.phase !== 'ended') throw new RuleError('That game has already started');
-    if (room.seats.length >= MAX_SEATS) throw new RuleError('The room is full');
+    if (room.seats.length >= MAX_PLAYERS) throw new RuleError('The room is full');
     seat = { id: randomUUID().slice(0, 8), name, token: randomUUID(), socket: null, bot: null };
     room.seats.push(seat);
   }
@@ -132,7 +132,7 @@ wss.on('connection', (socket) => {
       switch (msg.type) {
         case 'addBot':
           if (room.game && room.game.phase !== 'ended') throw new RuleError('The game is running');
-          if (room.seats.length >= MAX_SEATS) throw new RuleError('The room is full');
+          if (room.seats.length >= MAX_PLAYERS) throw new RuleError('The room is full');
           room.seats.push({
             id: randomUUID().slice(0, 8),
             name: `Bot ${room.seats.filter((s) => s.bot).length + 1}`,

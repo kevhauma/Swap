@@ -72,6 +72,9 @@ const fail = (message: string): never => {
   throw new RuleError(message);
 };
 
+/** Most players at one table (GAME_OVERVIEW.md section 6). */
+export const MAX_PLAYERS = 6;
+
 const MAX_LOG = 30;
 const POWER_STEPS: Step['kind'][] = ['peekOwn', 'spy', 'blindSwap', 'openSwap'];
 
@@ -80,7 +83,7 @@ export function createGame(
   options: { hardMode: boolean },
   ctx: Ctx
 ): GameState {
-  if (players.length < 2 || players.length > 8) fail('Swap needs 2 to 8 players');
+  if (players.length < 2 || players.length > MAX_PLAYERS) fail(`Swap needs 2 to ${MAX_PLAYERS} players`);
   const deck = shuffle(newDeck(players.length > 4 ? 2 : 1, ctx.id), ctx.random);
   return {
     phase: 'peek',

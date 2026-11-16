@@ -3,6 +3,7 @@ import {
   apply,
   botAction,
   createGame,
+  MAX_PLAYERS,
   points,
   remember,
   RuleError,
@@ -91,6 +92,13 @@ describe('setup', () => {
   it('uses two decks above 4 players', () => {
     const players = 'abcde'.split('').map((id) => ({ id, name: id }));
     expect(createGame(players, { hardMode: false }, ctx).stack).toHaveLength(108 - 21);
+  });
+
+  it(`seats up to ${MAX_PLAYERS} players and rejects more`, () => {
+    const players = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `p${i}`, name: `P${i}` }));
+    expect(MAX_PLAYERS).toBe(6);
+    expect(createGame(players(6), { hardMode: false }, ctx).players).toHaveLength(6);
+    expect(() => createGame(players(7), { hardMode: false }, ctx)).toThrow(RuleError);
   });
 
   it('starts turns once everyone has looked at one card, privately', () => {
