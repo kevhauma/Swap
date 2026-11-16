@@ -8,6 +8,7 @@ import {
   type PlayerView,
 } from '@swap/engine';
 import { PlayingCard, Slot } from './PlayingCard.tsx';
+import { isMuted, setMuted } from './sounds.ts';
 
 type Mode =
   | { kind: 'idle' }
@@ -54,6 +55,13 @@ const LockIcon = () => (
   </svg>
 );
 
+const SpeakerIcon = ({ muted }: { muted: boolean }) => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+    {muted ? <path d="M16 9.5l5 5m0-5l-5 5" /> : <path d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" />}
+  </svg>
+);
+
 export function Board({
   view,
   away,
@@ -69,6 +77,7 @@ export function Board({
   playAgain: () => void;
 }) {
   const [mode, setMode] = useState<Mode>({ kind: 'idle' });
+  const [muted, setMutedState] = useState(isMuted);
   const me = view.players.find((p) => p.id === view.you)!;
   const opponents = view.players.filter((p) => p !== me);
   const myTurn = view.turn === me.id;
@@ -320,14 +329,28 @@ export function Board({
           </p>
         )}
 
-        <ol className="mt-auto" aria-label="Game log">
-          {view.log.slice(-4).map((line, i, shown) => (
-            // Older lines fade like rubbed-out chalk.
-            <li key={view.log.length - shown.length + i} style={{ opacity: 1 - (shown.length - 1 - i) * 0.2 }}>
-              {line}
-            </li>
-          ))}
-        </ol>
+        <div className="mt-auto flex items-end gap-2">
+          <ol className="flex-1" aria-label="Game log">
+            {view.log.slice(-4).map((line, i, shown) => (
+              // Older lines fade like rubbed-out chalk.
+              <li key={view.log.length - shown.length + i} style={{ opacity: 1 - (shown.length - 1 - i) * 0.2 }}>
+                {line}
+              </li>
+            ))}
+          </ol>
+          <button
+            className="shrink-0 rounded-full p-2 text-chalk/80 hover:text-chalk"
+            aria-label="Mute sounds"
+            aria-pressed={muted}
+            title={muted ? 'Sounds off' : 'Sounds on'}
+            onClick={() => {
+              setMuted(!muted);
+              setMutedState(!muted);
+            }}
+          >
+            <SpeakerIcon muted={muted} />
+          </button>
+        </div>
       </div>
     </div>
   );

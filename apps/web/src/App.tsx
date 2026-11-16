@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MAX_PLAYERS } from '@swap/engine';
 import { Board } from './Board.tsx';
+import { unlockAudio } from './sounds.ts';
 import { hasToken, storage, useSwap } from './useSwap.ts';
 
 const NAME_KEY = 'swap:name';
@@ -22,6 +23,13 @@ export function App() {
     storage.set(NAME_KEY, name.trim());
     join(roomCode, name.trim());
   };
+
+  // Audio may only start after a user gesture; the first click or key press unlocks it.
+  useEffect(() => {
+    const events = ['click', 'keydown'];
+    events.forEach((e) => addEventListener(e, unlockAudio));
+    return () => events.forEach((e) => removeEventListener(e, unlockAudio));
+  }, []);
 
   // After a refresh, take the same seat back.
   useEffect(() => {

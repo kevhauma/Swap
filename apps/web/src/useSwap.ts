@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Action, Card, ClientMessage, GameView, Seat, ServerMessage } from '@swap/engine';
+import { play, soundFor } from './sounds.ts';
 
 const WS_URL: string =
   import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`;
@@ -66,6 +67,7 @@ export function useSwap() {
     (code: string, name: string) => {
       disconnect();
       let playerId = '';
+      let lastView: GameView | null = null;
       const open = () => {
         const ws = new WebSocket(WS_URL);
         socket.current = ws;
@@ -81,9 +83,14 @@ export function useSwap() {
             storage.set(tokenKey(msg.room), msg.token);
             history.replaceState(null, '', `?room=${msg.room}`);
           } else if (msg.type === 'room') {
+            play(soundFor(lastView, msg.view));
+            lastView = msg.view;
             setRoom({ code: msg.room, playerId, seats: msg.seats, view: msg.view });
-          } else if (msg.type === 'reveal') reveal(msg.cards);
-          else if (msg.type === 'error') showError(msg.message);
+          } else if (msg.type === 'reveal') {
+            // Own peeks already sound from the view's lastPeek; a stack peek and a wrong match have no other signal.
+            play(msg.reason === 'mismatch' ? 'wrong' : msg.reason === 'stack' ? 'flip' : null);
+            reveal(msg.cards);
+          } else if (msg.type === 'error') showError(msg.message);
         };
         ws.onclose = (event) => {
           if (socket.current !== ws) return;
