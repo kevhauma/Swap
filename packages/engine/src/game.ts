@@ -309,7 +309,7 @@ export function apply(
       const forOpponent = target.player !== me;
       const give = forOpponent && me.hand.length ? own(action.give) : null;
 
-      if (points(target.card) !== points(open)) {
+      if (target.card.rank !== open.rank) {
         reveals.push({ to: 'all', cards: [target.card], reason: 'mismatch' });
         penalty(me);
         log(`${me.name} wrongly matched ${cardName(target.card)} and takes a penalty card`);

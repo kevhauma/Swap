@@ -35,7 +35,8 @@ export function botAction(view: GameView, memory: BotMemory): Action | null {
   if (view.phase === 'ended') return null;
   if (view.phase === 'peek' && !me.hasPeeked) return { type: 'initialPeek', cardId: me.cards[0].id };
 
-  const match = open && !me.locked && me.cards.find((c) => known(c) && points(known(c)) === points(open));
+  // shortcut: no matching during an open swap; the view can't show a picked card that was matched away, so the bot would re-pick. Fix in the view if humans hit it.
+  const match = open && !me.locked && view.step.kind !== 'openSwap' && me.cards.find((c) => known(c) && known(c).rank === open.rank);
   if (match) return { type: 'match', cardId: match.id, openId: open.id };
 
   if (view.turn !== me.id) return null;

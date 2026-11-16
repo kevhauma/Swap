@@ -203,10 +203,17 @@ describe('matching', () => {
     expect(s.discard.at(-1)!.id).toMatch(/^6S/);
   });
 
-  it('matches by value, so red and black kings do not match', () => {
-    const s = table([['KS'], ['5S']], 'KH', ['2C']);
+  it('matches by rank, so a black king matches a red king', () => {
+    const s = table([['KS', '2H'], ['5S']], 'KH', ['2C']);
     const r = act(s, 'a', { type: 'match', cardId: id(s, 'a', 'KS'), openId: openId(s) });
-    expect(hand(r.state, 'a')).toEqual(['KS', '2C']);
+    expect(hand(r.state, 'a')).toEqual(['2H']);
+    expect(r.state.discard.at(-1)!.id).toMatch(/^KS/);
+  });
+
+  it('a joker matches a joker', () => {
+    const s = table([['JOKER', '2H'], ['5S']], 'JOKER', ['2C']);
+    const r = act(s, 'a', { type: 'match', cardId: id(s, 'a', 'JOKER'), openId: openId(s) });
+    expect(hand(r.state, 'a')).toEqual(['2H']);
   });
 
   it('wrong match: card shown to all, penalty card added', () => {
@@ -280,6 +287,12 @@ describe('view', () => {
 });
 
 describe('bots', () => {
+  it('match a known card of the same rank, whatever its colour', () => {
+    const s = table([['5S'], ['KS', '9H']], 'KH');
+    const memory: BotMemory = { [id(s, 'b', 'KS')]: s.players[1].hand[0] };
+    expect(botAction(viewFor(s, 'b'), memory)).toEqual({ type: 'match', cardId: id(s, 'b', 'KS'), openId: openId(s) });
+  });
+
   it('play complete games against each other without breaking a rule', () => {
     for (let game = 0; game < 30; game++) {
       const players = ['a', 'b', 'c'].map((id) => ({ id, name: id }));
