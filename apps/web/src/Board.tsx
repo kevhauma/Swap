@@ -247,7 +247,7 @@ export function Board({
         <div className="flex items-end justify-center gap-7">
           <div className="relative flex flex-col items-center gap-1">
             {/* Keyed by shuffle count, so the riffle replays on every reshuffle. */}
-            <div key={stack.shuffles} className={stack.shuffles ? 'reshuffled' : ''}>
+            <div key={stack.shuffles} className={`flex ${stack.shuffles ? 'reshuffled' : ''}`}>
               {view.stackTopId ? (
                 <PlayingCard
                   card={{ id: view.stackTopId }}
