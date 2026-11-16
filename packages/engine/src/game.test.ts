@@ -351,6 +351,26 @@ describe('bots', () => {
     expect(botAction(viewFor(s, 'b'), memory)).toEqual({ type: 'match', cardId: id(s, 'b', 'KS'), openId: openId(s) });
   });
 
+  it('match a known opponent card of the open rank and give their worst card', () => {
+    const s = table([['5S', 'KS'], ['2H', '9H']], 'KH');
+    const [two, nine] = s.players[1].hand;
+    const memory: BotMemory = { [id(s, 'a', 'KS')]: s.players[0].hand[1], [two.id]: two, [nine.id]: nine };
+    expect(botAction(viewFor(s, 'b'), memory)).toEqual({
+      type: 'match',
+      cardId: id(s, 'a', 'KS'),
+      openId: openId(s),
+      give: nine.id,
+    });
+  });
+
+  it("never match a locked player's card", () => {
+    const s = table([['5S', 'KS'], ['2H', '9H']], 'KH');
+    s.players[0].locked = true;
+    s.turn = 1;
+    const memory: BotMemory = { [id(s, 'a', 'KS')]: s.players[0].hand[1] };
+    expect(botAction(viewFor(s, 'b'), memory)?.type).not.toBe('match');
+  });
+
   it('play complete games against each other without breaking a rule', () => {
     for (let game = 0; game < 30; game++) {
       const players = ['a', 'b', 'c'].map((id) => ({ id, name: id }));

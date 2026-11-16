@@ -22,7 +22,7 @@ const pick = <T>(items: T[]): T | undefined => items[Math.floor(Math.random() * 
 
 /**
  * A simple heuristic player. It only uses what a player with perfect memory could know.
- * shortcut: never matches opponent cards and never bluffs; enough to fill a seat.
+ * shortcut: never bluffs; enough to fill a seat.
  */
 export function botAction(view: GameView, memory: BotMemory): Action | null {
   remember(memory, visibleCards(view));
@@ -35,13 +35,20 @@ export function botAction(view: GameView, memory: BotMemory): Action | null {
   if (view.phase === 'ended') return null;
   if (view.phase === 'peek' && !me.hasPeeked) return { type: 'initialPeek', cardId: me.cards[0].id };
 
+  const others = view.players.filter((p) => p.id !== me.id && !p.locked).flatMap((p) => p.cards);
+
   // shortcut: no matching during an open swap; the view can't show a picked card that was matched away, so the bot would re-pick. Fix in the view if humans hit it.
-  const match = open && !me.locked && view.step.kind !== 'openSwap' && me.cards.find((c) => known(c) && known(c).rank === open.rank);
-  if (match) return { type: 'match', cardId: match.id, openId: open.id };
+  if (open && !me.locked && view.step.kind !== 'openSwap') {
+    const ofOpenRank = (c: CardView) => known(c)?.rank === open.rank;
+    // Own cards first: the hand shrinks instead of trading a card away.
+    const mine = me.cards.find(ofOpenRank);
+    if (mine) return { type: 'match', cardId: mine.id, openId: open.id };
+    const theirs = others.find(ofOpenRank);
+    if (theirs) return { type: 'match', cardId: theirs.id, openId: open.id, give: worst?.id };
+  }
 
   if (view.turn !== me.id) return null;
 
-  const others = view.players.filter((p) => p.id !== me.id && !p.locked).flatMap((p) => p.cards);
   const lowestKnownOther = others
     .filter(known)
     .sort((a, b) => points(known(a)) - points(known(b)))[0];
