@@ -28,14 +28,27 @@ pop, and honour reduced motion.
 
 ## Acceptance criteria
 
-- [ ] A penalty card animates from the stack into the hand.
-- [ ] Opponent match: the matched card goes to the open pile and the given card moves to the
-      opponent, both visibly.
-- [ ] A reshuffle has a short visual cue on the stack.
-- [ ] `prefers-reduced-motion: reduce` disables movement (e.g. `MotionConfig
-      reducedMotion="user"`).
-- [ ] `npm run check` passes.
-- [ ] Verified live in the browser: each case above, in two tabs.
+- [x] A penalty card animates from the stack into the hand. (Already worked through the shared
+      `layoutId`; headless Edge at 360x740 with scripted views: the new hand card starts at the stack
+      (75,147, stack at 98,140) and springs to its slot (145,466) over ~350 ms.)
+- [x] Opponent match: the matched card goes to the open pile and the given card moves to the
+      opponent, both visibly. (Headless Edge: matched card slides from Bob's row (137,68) to the
+      open pile (195,146); given card slides from my hand (118,352) to Bob's slot (134,63). Before
+      the fix the given card passed behind the stack for ~100 ms (`elementFromPoint` hit another
+      element); [PlayingCard.tsx](../apps/web/src/PlayingCard.tsx) now raises `zIndex` during a
+      layout animation and it stays on top for every sample.)
+- [x] A reshuffle has a short visual cue on the stack. ([Board.tsx](../apps/web/src/Board.tsx)
+      counts stack growth and re-keys the stack wrapper, which plays the 0.6 s `riffle` keyframes in
+      [index.css](../apps/web/src/index.css); headless Edge: `document.getAnimations()` shows
+      `riffle` right after the stack goes from 0 to 20. Also plays when a new round is dealt.)
+- [x] `prefers-reduced-motion: reduce` disables movement (e.g. `MotionConfig
+      reducedMotion="user"`). ([main.tsx](../apps/web/src/main.tsx) wraps the app in
+      `MotionConfig reducedMotion="user"`; `.reshuffled` is in the reduced-motion block of
+      index.css. Headless Edge with emulated `prefers-reduced-motion: reduce`: all three cards sit
+      at their final position from the first frame, and no `riffle` animation runs.)
+- [x] `npm run check` passes. (tsc clean, 33/33 vitest tests.)
+- [ ] Verified live in the browser: each case above, in two tabs. — not ticked: browser
+      verification pending (headless measurements above are not a check of how the motion feels).
 
 ## Notes
 

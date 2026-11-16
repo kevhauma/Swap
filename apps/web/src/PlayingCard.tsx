@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion, useMotionValue } from 'motion/react';
 import { useState } from 'react';
 import { cardName, isFaceUp, isRed, type Card, type CardView } from '@swap/engine';
 
@@ -42,6 +42,8 @@ export function PlayingCard({
   // Keep the face mounted while flipping back, then drop it from the DOM.
   const [shown, setShown] = useState(face);
   if (face && face !== shown) setShown(face);
+  // Lift a card above the rest of the table while it travels, e.g. a given card passing the stack.
+  const zIndex = useMotionValue(0);
 
   return (
     <motion.button
@@ -51,6 +53,9 @@ export function PlayingCard({
       onClick={onClick}
       aria-label={face ? cardName(face) : 'Face-down card'}
       transition={{ type: 'spring', stiffness: 220, damping: 26 }}
+      style={{ zIndex }}
+      onLayoutAnimationStart={() => zIndex.set(1)}
+      onLayoutAnimationComplete={() => zIndex.set(0)}
       className={`relative aspect-[167/243] shrink-0 rounded-md shadow-[0_2px_2px_rgb(10_30_15/0.35),0_7px_9px_-2px_rgb(10_30_15/0.3)] perspective-midrange ${SIZES[size]} ${
         onClick ? 'chalk-loop' : ''
       } ${selected ? '-translate-y-2 outline-3 outline-offset-2 outline-chalk' : ''} ${peeked ? 'peeked' : ''}`}

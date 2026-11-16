@@ -90,6 +90,11 @@ export function Board({
     return () => clearTimeout(timer);
   }, [peeked]);
 
+  // The stack only grows when the discard pile is shuffled back in (or a new round is dealt).
+  const [stack, setStack] = useState({ count: view.stackCount, shuffles: 0 });
+  if (view.stackCount !== stack.count)
+    setStack({ count: view.stackCount, shuffles: stack.shuffles + Number(view.stackCount > stack.count) });
+
   const canMatch = view.phase !== 'ended' && !me.locked && !!open;
 
   /** What tapping this card does right now, or null if it is not tappable. */
@@ -218,14 +223,17 @@ export function Board({
 
         <div className="flex items-end justify-center gap-7">
           <div className="relative flex flex-col items-center gap-1">
-            {view.stackTopId ? (
-              <PlayingCard
-                card={{ id: view.stackTopId }}
-                onClick={myTurn && step.kind === 'choose' ? () => act({ type: 'draw' }) : undefined}
-              />
-            ) : (
-              <Slot label="empty" />
-            )}
+            {/* Keyed by shuffle count, so the riffle replays on every reshuffle. */}
+            <div key={stack.shuffles} className={stack.shuffles ? 'reshuffled' : ''}>
+              {view.stackTopId ? (
+                <PlayingCard
+                  card={{ id: view.stackTopId }}
+                  onClick={myTurn && step.kind === 'choose' ? () => act({ type: 'draw' }) : undefined}
+                />
+              ) : (
+                <Slot label="empty" />
+              )}
+            </div>
             <span className="text-chalk/70">stack ({view.stackCount})</span>
           </div>
           {step.kind === 'drawn' && (

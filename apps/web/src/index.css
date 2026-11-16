@@ -96,6 +96,16 @@ button:disabled {
   }
 }
 
+/* The discard pile was just shuffled into the stack: a quick riffle. */
+.reshuffled {
+  animation: riffle 0.6s ease-in-out;
+}
+@keyframes riffle {
+  20% { translate: -6px 0; rotate: -8deg; }
+  45% { translate: 6px 0; rotate: 7deg; }
+  70% { translate: -3px 0; rotate: -3deg; }
+}
+
 .wood {
   border-radius: 6px;
   padding: 9px 14px 7px;
@@ -164,7 +174,8 @@ button:disabled {
   .wood {
     transition: none;
   }
-  .peeked {
+  .peeked,
+  .reshuffled {
     animation: none;
   }
 }
