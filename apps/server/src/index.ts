@@ -185,14 +185,17 @@ const onConnection = (socket: WebSocket) => {
           });
           broadcast(room);
           break;
-        case 'start':
+        case 'start': {
           if (room.game && room.game.phase !== 'ended') throw new RuleError('The game is running');
+          // First, so a rejected deck (unknown ranks, too few cards) leaves the room untouched.
+          const game = createGame(room.seats, { hardMode: msg.hardMode === true, swishPenalty: msg.swishPenalty === true, ranks: msg.ranks }, ctx);
           // A match in progress keeps its mode; otherwise this round opens a new match.
           if (!room.tally || room.tally.champions.length) room.tally = newTally(parseMatch(msg.match));
           room.seats.forEach((s) => s.bot && (s.bot.memory = {}));
-          room.game = createGame(room.seats, { hardMode: msg.hardMode === true, swishPenalty: msg.swishPenalty === true }, ctx);
+          room.game = game;
           broadcast(room);
           break;
+        }
         case 'action':
           if (typeof msg.action !== 'object' || msg.action === null) throw new RuleError('Bad action');
           act(room, seat, msg.action);

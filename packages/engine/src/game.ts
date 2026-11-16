@@ -1,4 +1,5 @@
 import {
+  ALL_RANKS,
   cardName,
   newDeck,
   points,
@@ -6,6 +7,7 @@ import {
   shuffle,
   type Card,
   type Power,
+  type Rank,
 } from './cards.ts';
 
 /** Randomness is injected so the server can use crypto and tests can be deterministic. */
@@ -33,6 +35,8 @@ export interface GameState {
   hardMode: boolean;
   /** House rule (row 9): the swish caller pays SWISH_PENALTY when not (shared) lowest. */
   swishPenalty: boolean;
+  /** The ranks in the deck (custom deck, row 1). */
+  ranks: Rank[];
   players: Player[];
   /** Last element is the top. */
   stack: Card[];
@@ -84,15 +88,21 @@ const POWER_STEPS: Step['kind'][] = ['peekOwn', 'spy', 'blindSwap', 'openSwap'];
 
 export function createGame(
   players: { id: string; name: string }[],
-  options: { hardMode: boolean; swishPenalty?: boolean },
+  options: { hardMode: boolean; swishPenalty?: boolean; ranks?: Rank[] },
   ctx: Ctx
 ): GameState {
   if (players.length < 2 || players.length > MAX_PLAYERS) fail(`Swap needs 2 to ${MAX_PLAYERS} players`);
-  const deck = shuffle(newDeck(players.length > 4 ? 2 : 1, ctx.id), ctx.random);
+  // Checked here rather than on the server alone: `ranks` arrives straight from a client message.
+  const ranks = options.ranks ?? ALL_RANKS;
+  if (!Array.isArray(ranks) || !ranks.every((r) => ALL_RANKS.includes(r))) fail('Unknown card rank');
+  if (new Set(ranks).size !== ranks.length) fail('A rank is chosen twice');
+  const deck = shuffle(newDeck(players.length > 4 ? 2 : 1, ctx.id, ranks), ctx.random);
+  if (deck.length < players.length * 4 + 1) fail(`Too few cards to deal ${players.length} players: choose more ranks`);
   return {
     phase: 'peek',
     hardMode: options.hardMode,
     swishPenalty: options.swishPenalty === true,
+    ranks: [...ranks],
     players: players.map((p) => ({
       id: p.id,
       name: p.name,

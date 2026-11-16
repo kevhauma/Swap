@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ALL_RANKS,
   apply,
   botAction,
   createGame,
@@ -47,6 +48,7 @@ const table = (
   phase: 'turn',
   hardMode: false,
   swishPenalty: false,
+  ranks: ALL_RANKS,
   players: hands.map((h, i) => ({
     id: 'abc'[i],
     name: 'ABC'[i],
@@ -101,6 +103,37 @@ describe('setup', () => {
     expect(MAX_PLAYERS).toBe(6);
     expect(createGame(players(6), { hardMode: false }, ctx).players).toHaveLength(6);
     expect(() => createGame(players(7), { hardMode: false }, ctx)).toThrow(RuleError);
+  });
+
+  describe('custom deck (row 1)', () => {
+    const players = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `p${i}`, name: `P${i}` }));
+    const cards = (s: GameState) => [...s.stack, ...s.discard, ...s.players.flatMap((p) => p.hand)];
+
+    it('deals only the chosen ranks, every suit plus 2 Jokers per deck, and shows the choice to everyone', () => {
+      const s = createGame(players(2), { hardMode: false, ranks: ['A', 'K', 'JOKER'] }, ctx);
+      expect(cards(s).map((c) => c.rank).sort()).toEqual(['A', 'A', 'A', 'A', 'JOKER', 'JOKER', 'K', 'K', 'K', 'K']);
+      expect(viewFor(s, 'p0').ranks).toEqual(['A', 'K', 'JOKER']);
+      const five = createGame(players(5), { hardMode: false, ranks: ['2', '3', '4'] }, ctx);
+      expect(cards(five)).toHaveLength(2 * 12);
+      expect(new Set(cards(five).map((c) => c.rank))).toEqual(new Set(['2', '3', '4']));
+    });
+
+    it('defaults to the full deck', () => {
+      expect(createGame(players(2), { hardMode: false }, ctx).ranks).toEqual(ALL_RANKS);
+    });
+
+    it('rejects a deck too small to deal 4 cards each plus the open card', () => {
+      expect(createGame(players(2), { hardMode: false, ranks: ['A', '2', 'JOKER'] }, ctx).stack).toHaveLength(1);
+      expect(() => createGame(players(2), { hardMode: false, ranks: ['A', '2'] }, ctx)).toThrow(/Too few cards/);
+      expect(() => createGame(players(2), { hardMode: false, ranks: [] }, ctx)).toThrow(RuleError);
+      expect(() => createGame(players(5), { hardMode: false, ranks: ['A', '2'] }, ctx)).toThrow(RuleError);
+    });
+
+    it('rejects unknown and repeated ranks', () => {
+      expect(() => createGame(players(2), { hardMode: false, ranks: ['A', '2', '1'] as never }, ctx)).toThrow(/Unknown card rank/);
+      expect(() => createGame(players(2), { hardMode: false, ranks: 'A23' as never }, ctx)).toThrow(/Unknown card rank/);
+      expect(() => createGame(players(2), { hardMode: false, ranks: ['A', 'A', '2', '3'] }, ctx)).toThrow(/twice/);
+    });
   });
 
   it('starts turns once everyone has looked at one card, privately', () => {

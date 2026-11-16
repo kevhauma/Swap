@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { apply, viewFor, type Action, type Card, type GameState } from '@swap/engine';
+import { ALL_RANKS, apply, viewFor, type Action, type Card, type GameState } from '@swap/engine';
 import { soundFor } from './sounds.ts';
 
 const card = (id: string): Card => ({ id, rank: id.slice(0, -1) as Card['rank'], suit: id.at(-1) as Card['suit'] });
@@ -11,6 +11,7 @@ const table = (extra: Partial<GameState> = {}): GameState => ({
   phase: 'turn',
   hardMode: false,
   swishPenalty: false,
+  ranks: ALL_RANKS,
   players: [
     { id: 'a', name: 'A', hand: [card('5H'), card('7H')], locked: false, hasPeeked: true },
     { id: 'b', name: 'B', hand: [card('5S'), card('QS')], locked: false, hasPeeked: true },

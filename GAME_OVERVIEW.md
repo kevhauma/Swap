@@ -14,8 +14,8 @@ else gets one last turn, then everyone reveals and the lowest score wins.
 
 ## 2. Components
 
-- Standard 52-card deck + 2 Jokers. (Later option: a custom deck setting to pick which card
-  sets are in play, like another game the group played.)
+- Standard 52-card deck + 2 Jokers. Custom deck option: the host picks which ranks are in play
+  (see section 5, row 1).
 - Per player: a row of 4 face-down cards.
 - Centre: draw **stack** (face down) and **open card** (top of the discard pile).
 
@@ -70,7 +70,7 @@ These are the rules the engine implements.
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | How many Jokers? Deck size for 5+ players? | 2 Jokers; 2 decks above 4 players. Custom deck (choose card sets) later |
+| 1 | How many Jokers? Deck size for 5+ players? | 2 Jokers; 2 decks above 4 players. Custom deck (decided 2026-11-16): the lobby has a free rank picker, one checkbox per rank with Jokers as a rank, all ranks by default, no named presets. A chosen rank brings all 4 suits (Jokers: 2) per deck; the 1-or-2 decks rule stays. Removing a rank simply removes its cards and their power. The deck must hold at least 4 cards per player plus the open card, or the game does not start |
 | 2 | Two players match the same open card at once | Server-ordered: first message wins, second gets "too late", no penalty |
 | 3 | When is matching allowed? ("in between rounds") | Any time, against the current open card; no restrictions in the real game, so whatever the server handles. MVP: during the deal peek and the turns |
 | 3a | What does "matches" mean? | Same **rank**: the same number or letter on the card, not the point value. Colour does not matter: a red K matches a black K, a Joker matches a Joker |

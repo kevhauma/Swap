@@ -25,6 +25,7 @@ export interface GameView {
   phase: GameState['phase'];
   hardMode: boolean;
   swishPenalty: boolean;
+  ranks: GameState['ranks'];
   players: PlayerView[];
   /** Whose turn it is; null during the opening peek. */
   turn: string | null;
@@ -58,6 +59,7 @@ export function viewFor(s: GameState, playerId: string): GameView {
     phase: s.phase,
     hardMode: s.hardMode,
     swishPenalty: s.swishPenalty,
+    ranks: s.ranks,
     players: s.players.map((p) => ({
       id: p.id,
       name: p.name,

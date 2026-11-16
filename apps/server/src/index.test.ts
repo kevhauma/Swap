@@ -165,4 +165,15 @@ describe('server rooms', () => {
     const fresh = await latest(alice.c, 'room', (m) => m.view?.phase === 'peek');
     expect(fresh.tally).toEqual({ match: { mode: 'wins', target: 3 }, totals: {}, champions: [] });
   });
+
+  it('passes the chosen ranks to the engine; a rejected deck leaves the room as it was', async () => {
+    const alice = await join('DECK', 'Alice');
+    await join('DECK', 'Bob');
+    alice.c.send({ type: 'start', hardMode: false, swishPenalty: false, match: { mode: 'wins', target: 1 }, ranks: ['A', '2'] });
+    expect((await latest(alice.c, 'error')).message).toMatch(/Too few cards/);
+    alice.c.send({ type: 'start', hardMode: false, swishPenalty: false, match: { mode: 'wins', target: 3 }, ranks: ['A', 'K', 'JOKER'] });
+    const { view, tally } = await latest(alice.c, 'room', (m) => m.view !== null);
+    expect(view!.ranks).toEqual(['A', 'K', 'JOKER']);
+    expect(tally!.match.target).toBe(3);
+  });
 });

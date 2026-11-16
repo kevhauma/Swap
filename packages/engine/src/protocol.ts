@@ -1,4 +1,4 @@
-import type { Card } from './cards.ts';
+import type { Card, Rank } from './cards.ts';
 import type { Action, Reveal } from './game.ts';
 import type { GameView } from './view.ts';
 
@@ -6,7 +6,8 @@ import type { GameView } from './view.ts';
 export type ClientMessage =
   | { type: 'join'; room: string; name: string; token?: string }
   | { type: 'addBot' }
-  | { type: 'start'; hardMode: boolean; swishPenalty: boolean; match: Match }
+  /** `ranks`: the custom deck; omitted means the full deck. */
+  | { type: 'start'; hardMode: boolean; swishPenalty: boolean; match: Match; ranks?: Rank[] }
   | { type: 'action'; action: Action };
 
 export interface Seat {

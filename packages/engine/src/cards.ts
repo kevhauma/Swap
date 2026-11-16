@@ -50,7 +50,8 @@ const RANK_POINTS: Record<Rank, number> = {
   JOKER: 0,
 };
 
-const RANKS = (Object.keys(RANK_POINTS) as Rank[]).filter((r) => r !== 'JOKER');
+/** Every rank in table order, Jokers last: the default deck and the lobby's rank picker. */
+export const ALL_RANKS: Rank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'JOKER'];
 
 const POWERS: Partial<Record<Rank, Power>> = {
   '7': 'peekOwn',
@@ -84,12 +85,11 @@ export const cardName = (card: Card) =>
 
 const suitSymbol: Record<Suit, string> = { C: '♣', D: '♦', H: '♥', S: '♠' };
 
-/** One or more 52-card decks, each with 2 Jokers. */
-export const newDeck = (decks: number, id: () => string): Card[] =>
+/** One or more decks of the chosen ranks: every suit of each rank, plus 2 Jokers if chosen. */
+export const newDeck = (decks: number, id: () => string, ranks: readonly Rank[] = ALL_RANKS): Card[] =>
   Array.from({ length: decks }).flatMap(() => [
-    ...SUITS.flatMap((suit) => RANKS.map((rank) => ({ id: id(), rank, suit }))),
-    { id: id(), rank: 'JOKER' as const, suit: null },
-    { id: id(), rank: 'JOKER' as const, suit: null },
+    ...SUITS.flatMap((suit) => ranks.filter((r) => r !== 'JOKER').map((rank) => ({ id: id(), rank, suit }))),
+    ...(ranks.includes('JOKER') ? [null, null].map(() => ({ id: id(), rank: 'JOKER' as const, suit: null })) : []),
   ]);
 
 export const shuffle = <T>(items: T[], random: () => number): T[] => {

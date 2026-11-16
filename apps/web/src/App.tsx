@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MAX_PLAYERS, SWISH_PENALTY, type Match } from '@swap/engine';
+import { ALL_RANKS, MAX_PLAYERS, SWISH_PENALTY, type Match } from '@swap/engine';
 import { Board } from './Board.tsx';
 import { unlockAudio } from './sounds.ts';
 import { hasToken, storage, useSwap } from './useSwap.ts';
@@ -27,6 +27,7 @@ export function App() {
   const [hardMode, setHardMode] = useState(false);
   const [swishPenalty, setSwishPenalty] = useState(false);
   const [preset, setPreset] = useState(0);
+  const [ranks, setRanks] = useState(ALL_RANKS);
 
   const enter = (roomCode: string) => {
     storage.set(NAME_KEY, name.trim());
@@ -113,7 +114,7 @@ export function App() {
           revealed={revealed}
           tally={room.tally}
           act={act}
-          playAgain={() => send({ type: 'start', hardMode: view.hardMode, swishPenalty: view.swishPenalty, match: room.tally?.match ?? { mode: 'wins', target: 1 } })}
+          playAgain={() => send({ type: 'start', hardMode: view.hardMode, swishPenalty: view.swishPenalty, match: room.tally?.match ?? { mode: 'wins', target: 1 }, ranks: view.ranks })}
         />
         {toast}
       </>
@@ -148,6 +149,25 @@ export function App() {
         <input type="checkbox" checked={swishPenalty} onChange={(e) => setSwishPenalty(e.target.checked)} />
         Swish penalty (+{SWISH_PENALTY} points if the caller is not lowest)
       </label>
+      {/* Removing a rank removes its cards and their power; the server rejects a deck too small to deal. */}
+      <fieldset className="text-sm">
+        <legend className="mb-1">Cards in the deck</legend>
+        <div className="grid grid-cols-7 gap-1">
+          {ALL_RANKS.map((rank) => (
+            <label key={rank} className="cursor-pointer">
+              <input
+                type="checkbox"
+                className="peer sr-only"
+                checked={ranks.includes(rank)}
+                onChange={(e) => setRanks(ALL_RANKS.filter((r) => (r === rank ? e.target.checked : ranks.includes(r))))}
+              />
+              <span className="block rounded-md bg-table-deep py-1.5 text-center text-slot/50 line-through peer-checked:bg-slot peer-checked:text-table-deep peer-checked:no-underline peer-focus-visible:ring-2 peer-focus-visible:ring-turn">
+                {rank === 'JOKER' ? 'Joker' : rank}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <label className="flex items-center justify-between gap-2 text-sm">
         Play
         <select className="rounded-lg bg-table-deep px-3 py-2" value={preset} onChange={(e) => setPreset(Number(e.target.value))}>
@@ -164,7 +184,7 @@ export function App() {
         </button>
         <button
           className={`${button} flex-1`}
-          onClick={() => send({ type: 'start', hardMode, swishPenalty, match: MATCHES[preset][1] })}
+          onClick={() => send({ type: 'start', hardMode, swishPenalty, match: MATCHES[preset][1], ranks })}
           disabled={room.seats.length < 2}
         >
           Start
