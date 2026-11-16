@@ -101,11 +101,13 @@ export function Board({
   }, [peeked]);
 
   // The stack only grows when the discard pile is shuffled back in (or a new round is dealt).
+  // shortcut: shuffling in a 2-card discard pile leaves the count at 0, so no riffle; add a reshuffle counter to the view if that matters.
   const [stack, setStack] = useState({ count: view.stackCount, shuffles: 0 });
   if (view.stackCount !== stack.count)
     setStack({ count: view.stackCount, shuffles: stack.shuffles + Number(view.stackCount > stack.count) });
 
   const canMatch = view.phase !== 'ended' && !me.locked && !!open;
+  const draw = myTurn && step.kind === 'choose' && view.canDraw ? () => act({ type: 'draw' }) : undefined;
 
   /** What tapping this card does right now, or null if it is not tappable. */
   const onTap = (card: CardView, owner: PlayerView): (() => void) | null => {
@@ -249,12 +251,12 @@ export function Board({
             {/* Keyed by shuffle count, so the riffle replays on every reshuffle. */}
             <div key={stack.shuffles} className={`flex ${stack.shuffles ? 'reshuffled' : ''}`}>
               {view.stackTopId ? (
-                <PlayingCard
-                  card={{ id: view.stackTopId }}
-                  onClick={myTurn && step.kind === 'choose' ? () => act({ type: 'draw' }) : undefined}
-                />
+                <PlayingCard card={{ id: view.stackTopId }} onClick={draw} />
               ) : (
-                <Slot label="empty" />
+                // Empty but drawable: the draw shuffles the discard pile back in.
+                <button type="button" disabled={!draw} onClick={draw} aria-label={draw ? 'Shuffle the discard pile in and draw' : undefined} className={`relative ${draw ? 'chalk-loop' : ''}`}>
+                  <Slot label="empty" />
+                </button>
               )}
             </div>
             <span className="text-chalk/70">stack ({view.stackCount})</span>
@@ -290,7 +292,7 @@ export function Board({
           )}
           {myTurn && step.kind === 'choose' && (
             <>
-              <button className={button} onClick={() => act({ type: 'draw' })} disabled={!view.stackCount}>
+              <button className={button} onClick={draw} disabled={!draw}>
                 Draw
               </button>
               <button className={button} aria-pressed={mode.kind === 'takeOpen'} onClick={() => toggle('takeOpen')}>

@@ -28,6 +28,8 @@ export interface GameView {
   step: StepView;
   open: Card | null;
   stackCount: number;
+  /** The engine accepts a draw: stack not empty, or a discard pile of 2+ to shuffle back in. */
+  canDraw: boolean;
   /** Lets the client animate the drawn card out of the stack. */
   stackTopId: string | null;
   turnsTaken: number;
@@ -73,6 +75,7 @@ export function viewFor(s: GameState, playerId: string): GameView {
           : { kind: s.step.kind },
     open: s.discard.at(-1) ?? null,
     stackCount: s.stack.length,
+    canDraw: s.stack.length > 0 || s.discard.length > 1,
     stackTopId: s.stack.at(-1)?.id ?? null,
     turnsTaken: s.turnsTaken,
     swishBy: s.swishBy,

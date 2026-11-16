@@ -144,11 +144,18 @@ describe('turns', () => {
     let s = table([['9H'], ['5S']], 'AD', []);
     s.discard = [card('2D'), card('3D'), card('AD')];
     const oldIds = s.discard.map((c) => c.id);
+    expect(viewFor(s, 'a').canDraw).toBe(true);
     s = act(s, 'a', { type: 'draw' }).state;
     expect(s.discard.map((c) => c.id)).toEqual([oldIds[2]]);
     const drawn = (s.step as { card: Card }).card;
     expect(oldIds).not.toContain(drawn.id);
     expect(s.stack.every((c) => !oldIds.includes(c.id))).toBe(true);
+  });
+
+  it('refuses a draw when the stack is empty and only the open card is on the discard pile', () => {
+    const s = table([['9H'], ['5S']], 'AD', []);
+    expect(viewFor(s, 'a').canDraw).toBe(false);
+    expect(() => act(s, 'a', { type: 'draw' })).toThrow('The stack is empty');
   });
 });
 
@@ -396,6 +403,11 @@ describe('bots', () => {
     s.turn = 1;
     const memory: BotMemory = { [id(s, 'a', 'KS')]: s.players[0].hand[1] };
     expect(botAction(viewFor(s, 'b'), memory)?.type).not.toBe('match');
+  });
+
+  it('take the open card when the stack is empty and nothing can be shuffled in', () => {
+    const s = table([['5S'], ['KS', '9H']], 'QH', [], { turn: 1 });
+    expect(botAction(viewFor(s, 'b'), {})).toEqual({ type: 'takeOpen', replace: id(s, 'b', 'KS') });
   });
 
   it('play complete games against each other without breaking a rule', () => {

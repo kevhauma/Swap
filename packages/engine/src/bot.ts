@@ -62,7 +62,7 @@ export function botAction(view: GameView, memory: BotMemory): Action | null {
         (total <= 5 || view.turnsTaken > 20 * view.players.length)
       )
         return { type: 'swish' };
-      if (open && worst && points(open) <= 3 && points(open) < estimate(worst))
+      if (open && worst && ((points(open) <= 3 && points(open) < estimate(worst)) || !view.canDraw))
         return { type: 'takeOpen', replace: worst.id };
       return { type: 'draw' };
     case 'drawn': {
