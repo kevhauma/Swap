@@ -22,11 +22,15 @@ Add one GitHub Actions workflow that runs `npm run check` on Node 24.
 
 ## Acceptance criteria
 
-- [ ] `.github/workflows/check.yml` runs on `pull_request` and on `push` to `main`.
-- [ ] Uses `actions/setup-node` with Node 24 and the npm cache, then `npm ci` and
-      `npm run check`.
-- [ ] Actions pinned to a version; no secrets needed.
-- [ ] A pull request shows the check passing on GitHub.
+- [x] `.github/workflows/check.yml` runs on `pull_request` and on `push` to `main`.
+      (`.github/workflows/check.yml`, `on: pull_request` + `push: branches: [main]`)
+- [x] Uses `actions/setup-node` with Node 24 and the npm cache, then `npm ci` and
+      `npm run check`. (`actions/setup-node@v4`, `node-version: 24`, `cache: npm`; lockfile has
+      Linux native bindings and every engine range accepts Node 24; `npm ci --dry-run` and
+      `npm run check` pass locally)
+- [x] Actions pinned to a version; no secrets needed. (`actions/checkout@v4`,
+      `actions/setup-node@v4`; no `secrets.*` used, `permissions: contents: read`)
+- [ ] A pull request shows the check passing on GitHub. — not ticked: pending: needs a pushed PR
 
 ## Notes
 
