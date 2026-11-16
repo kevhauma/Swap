@@ -193,6 +193,33 @@ describe('powers', () => {
     expect(hand(s, 'b')).toEqual(['5S', '9H']);
   });
 
+  it('black K: own pick matched away still counts as picked, shows no face, and the decision keeps both', () => {
+    let { state: s } = usePower('KS', [['KC', '2H'], ['5S', '6S']]);
+    const kc = id(s, 'a', 'KC');
+    s = act(s, 'a', { type: 'peek', cardId: kc }).state;
+    s = act(s, 'b', { type: 'match', cardId: kc, openId: openId(s), give: id(s, 'b', '5S') }).state;
+    for (const p of ['a', 'b']) expect(viewFor(s, p).step).toEqual({ kind: 'openSwap', own: { id: kc } });
+    s = act(s, 'a', { type: 'peek', cardId: id(s, 'b', '6S') }).state;
+    s = act(s, 'a', { type: 'openSwap', swap: true }).state;
+    expect(hand(s, 'a')).toEqual(['5S', '2H']);
+    expect(hand(s, 'b')).toEqual(['6S']);
+    expect(s.players[s.turn].id).toBe('b');
+  });
+
+  it('black K: opponent pick matched away shows no face, and the decision keeps both', () => {
+    let { state: s } = usePower('KS', [['9H', '2H'], ['KD', '6S']]);
+    const kd = id(s, 'b', 'KD');
+    s = act(s, 'a', { type: 'peek', cardId: id(s, 'a', '9H') }).state;
+    s = act(s, 'a', { type: 'peek', cardId: kd }).state;
+    s = act(s, 'b', { type: 'match', cardId: kd, openId: openId(s) }).state;
+    expect(viewFor(s, 'a').step).toEqual({ kind: 'openSwap', own: expect.objectContaining({ rank: '9' }), other: { id: kd } });
+    expect(viewFor(s, 'b').step).toEqual({ kind: 'openSwap', own: { id: id(s, 'a', '9H') }, other: { id: kd } });
+    s = act(s, 'a', { type: 'openSwap', swap: true }).state;
+    expect(hand(s, 'a')).toEqual(['9H', '2H']);
+    expect(hand(s, 'b')).toEqual(['6S']);
+    expect(s.players[s.turn].id).toBe('b');
+  });
+
   it('red K has no power', () => {
     expect(usePower('KH').state.step.kind).toBe('choose');
   });

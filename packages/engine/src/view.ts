@@ -14,6 +14,7 @@ export interface PlayerView {
 export type StepView =
   | { kind: 'choose' | 'peekOwn' | 'spy' | 'blindSwap' }
   | { kind: 'drawn'; card: CardView }
+  /** Set once picked; a card matched away since stays as its id alone, so "picked" never reads as "not picked". */
   | { kind: 'openSwap'; own?: CardView; other?: CardView };
 
 /** Everything one player is allowed to know. Never contains a hidden card's face. */
@@ -45,6 +46,7 @@ export function viewFor(s: GameState, playerId: string): GameView {
     s.players.flatMap((p) => p.hand).find((c) => c.id === id);
   const forActive = (card: Card | undefined) =>
     card && (active ? card : hide(card));
+  const picked = (id: string | undefined) => (id ? (forActive(handCard(id)) ?? { id }) : undefined);
 
   return {
     you: playerId,
@@ -65,8 +67,8 @@ export function viewFor(s: GameState, playerId: string): GameView {
         : s.step.kind === 'openSwap'
           ? {
               kind: 'openSwap',
-              own: forActive(handCard(s.step.own)),
-              other: forActive(handCard(s.step.other)),
+              own: picked(s.step.own),
+              other: picked(s.step.other),
             }
           : { kind: s.step.kind },
     open: s.discard.at(-1) ?? null,

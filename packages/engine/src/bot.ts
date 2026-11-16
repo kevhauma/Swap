@@ -37,8 +37,7 @@ export function botAction(view: GameView, memory: BotMemory): Action | null {
 
   const others = view.players.filter((p) => p.id !== me.id && !p.locked).flatMap((p) => p.cards);
 
-  // shortcut: no matching during an open swap; the view can't show a picked card that was matched away, so the bot would re-pick. Fix in the view if humans hit it.
-  if (open && !me.locked && view.step.kind !== 'openSwap') {
+  if (open && !me.locked) {
     const ofOpenRank = (c: CardView) => known(c)?.rank === open.rank;
     // Own cards first: the hand shrinks instead of trading a card away.
     const mine = me.cards.find(ofOpenRank);
@@ -90,10 +89,9 @@ export function botAction(view: GameView, memory: BotMemory): Action | null {
       if (!step.own) return worst ? { type: 'peek', cardId: worst.id } : { type: 'skip' };
       const target = lowestKnownOther ?? pick(others);
       if (!step.other) return target ? { type: 'peek', cardId: target.id } : { type: 'skip' };
-      return {
-        type: 'openSwap',
-        swap: points(step.other as Card) < points(step.own as Card),
-      };
+      // A picked card matched away meanwhile shows no face; the engine keeps both cards then anyway.
+      const { own, other } = step;
+      return { type: 'openSwap', swap: isFaceUp(own) && isFaceUp(other) && points(other) < points(own) };
     }
   }
 }

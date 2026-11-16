@@ -34,13 +34,19 @@ picked yet.
 
 ## Acceptance criteria
 
-- [ ] `StepView` for `openSwap` distinguishes "not picked" from "picked, now gone".
-- [ ] Board and bot use it: no re-pick of a gone card; the swap decision still ends the turn.
-- [ ] The ENG-1 `shortcut:` guard in `bot.ts` is removed; bot-vs-bot games still pass.
-- [ ] Engine tests cover: own pick matched away, other pick matched away, view shows no hidden
-      face.
-- [ ] `npm run check` passes.
-- [ ] Verified live in the browser: two tabs, one matches away the other's picked card mid-K.
+- [x] `StepView` for `openSwap` distinguishes "not picked" from "picked, now gone". (view.ts `picked`: a
+      picked card that left every hand is sent as `{ id }`, no face; type doc on `StepView`)
+- [x] Board and bot use it: no re-pick of a gone card; the swap decision still ends the turn. (Board.tsx
+      already gates on `step.own` / `step.other` presence, so it needed no edit; bot.ts decides `swap`
+      only when both faces are shown; engine tests below end the turn)
+- [x] The ENG-1 `shortcut:` guard in `bot.ts` is removed; bot-vs-bot games still pass. ("play complete
+      games against each other" passed 10 of 10 runs)
+- [x] Engine tests cover: own pick matched away, other pick matched away, view shows no hidden
+      face. (game.test.ts "black K: own pick matched away …" and "black K: opponent pick matched away
+      …"; both fail without the view fix)
+- [x] `npm run check` passes. (tsc clean, 48 tests passed)
+- [ ] Verified live in the browser: two tabs, one matches away the other's picked card mid-K. — not
+      ticked: browser verification pending
 
 ## Notes
 
