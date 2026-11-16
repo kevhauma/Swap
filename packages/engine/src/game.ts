@@ -42,6 +42,8 @@ export interface GameState {
   swishBy: string | null;
   /** Turns left after a swish-swish; null before. */
   turnsLeft: number | null;
+  /** The card(s) just looked at, for everyone to see where (rule 3d); null after any other action. */
+  lastPeek: { by: string; cardIds: string[] } | null;
   log: string[];
 }
 
@@ -102,6 +104,7 @@ export function createGame(
     turnsTaken: 0,
     swishBy: null,
     turnsLeft: null,
+    lastPeek: null,
     log: ['Everyone: look at one of your cards'],
   };
 }
@@ -113,10 +116,15 @@ export function apply(
   ctx: Ctx
 ): { state: GameState; reveals: Reveal[] } {
   const s = structuredClone(prev);
+  s.lastPeek = null;
   const reveals: Reveal[] = [];
   const me = s.players.find((p) => p.id === playerId) ?? fail('Unknown player');
   const log = (line: string) => {
     s.log = [...s.log, line].slice(-MAX_LOG);
+  };
+  const peeked = (card: Card) => {
+    s.lastPeek = { by: me.id, cardIds: [card.id] };
+    return card;
   };
 
   const locate = (cardId: unknown) => {
@@ -187,7 +195,7 @@ export function apply(
   switch (action.type) {
     case 'initialPeek': {
       if (s.phase !== 'peek' || me.hasPeeked) fail('You already looked');
-      const { card } = own(action.cardId);
+      const card = peeked(own(action.cardId).card);
       me.hasPeeked = true;
       reveals.push({ to: me.id, cards: [card], reason: 'peek' });
       log(`${me.name} looked at a card`);
@@ -252,19 +260,20 @@ export function apply(
     case 'peek': {
       const step = requireTurn('peekOwn', 'spy', 'openSwap');
       if (step.kind === 'peekOwn') {
-        const { card } = own(action.cardId);
+        const card = peeked(own(action.cardId).card);
         reveals.push({ to: me.id, cards: [card], reason: 'peek' });
         log(`${me.name} looked at one of their cards`);
         endTurn();
       } else if (step.kind === 'spy') {
         const { card, player } = opponents(action.cardId);
+        peeked(card);
         reveals.push({ to: me.id, cards: [card], reason: 'spy' });
         log(`${me.name} looked at a card of ${player.name}`);
         endTurn();
       } else if (step.kind === 'openSwap' && !step.own) {
-        step.own = own(action.cardId).card.id;
+        step.own = peeked(own(action.cardId).card).id;
       } else if (step.kind === 'openSwap' && !step.other) {
-        step.other = opponents(action.cardId).card.id;
+        step.other = peeked(opponents(action.cardId).card).id;
       } else fail('Decide whether to swap');
       break;
     }

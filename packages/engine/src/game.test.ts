@@ -60,6 +60,7 @@ const table = (
   turnsTaken: 0,
   swishBy: null,
   turnsLeft: null,
+  lastPeek: null,
   log: [],
   ...extra,
 });
@@ -291,6 +292,55 @@ describe('view', () => {
     const faces = (v: object) => JSON.stringify(v).match(/"rank"/g)?.length ?? 0;
     expect(faces(viewFor(s, 'b'))).toBe(1); // only the open card
     expect(faces(viewFor(s, 'a'))).toBe(2); // plus the drawn card
+  });
+});
+
+describe('peek position (rule 3d)', () => {
+  const faces = (v: object) => JSON.stringify(v).match(/"rank"/g)?.length ?? 0;
+  /** b sees which card a looked at, but no face beyond the open card. */
+  const expectSeenByB = (s: GameState, cardId: string) => {
+    expect(s.lastPeek).toEqual({ by: 'a', cardIds: [cardId] });
+    expect(viewFor(s, 'b').lastPeek).toEqual({ by: 'a', cardIds: [cardId] });
+    expect(faces(viewFor(s, 'b'))).toBe(1);
+  };
+  const afterPower = (drawn: string, hardMode = false) => {
+    let s = table([['9H', '2H'], ['5S', '6S']], 'AD', [drawn, '2C', '3C', '4C', '5C'], { hardMode });
+    s = act(s, 'a', { type: 'draw' }).state;
+    return act(s, 'a', { type: 'discardDrawn' }).state;
+  };
+
+  it('first peek', () => {
+    const s0 = createGame([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }], { hardMode: false }, ctx);
+    const cardId = s0.players[0].hand[1].id;
+    expectSeenByB(act(s0, 'a', { type: 'initialPeek', cardId }).state, cardId);
+  });
+
+  it('7/8, then cleared by the next action that is not a peek', () => {
+    let s = afterPower('8C');
+    s = act(s, 'a', { type: 'peek', cardId: id(s, 'a', '9H') }).state;
+    expectSeenByB(s, id(s, 'a', '9H'));
+    s = act(s, 'b', { type: 'draw' }).state;
+    expect(viewFor(s, 'a').lastPeek).toBeNull();
+  });
+
+  it('9/10', () => {
+    let s = afterPower('9C');
+    s = act(s, 'a', { type: 'peek', cardId: id(s, 'b', '6S') }).state;
+    expectSeenByB(s, id(s, 'b', '6S'));
+  });
+
+  it('both black-K looks, each replacing the last', () => {
+    let s = afterPower('KC');
+    s = act(s, 'a', { type: 'peek', cardId: id(s, 'a', '2H') }).state;
+    expectSeenByB(s, id(s, 'a', '2H'));
+    s = act(s, 'a', { type: 'peek', cardId: id(s, 'b', '5S') }).state;
+    expectSeenByB(s, id(s, 'b', '5S'));
+    s = act(s, 'a', { type: 'openSwap', swap: false }).state;
+    expect(s.lastPeek).toBeNull();
+  });
+
+  it('hard-mode 6 (stack peek) shares no hand position', () => {
+    expect(viewFor(afterPower('6C', true), 'b').lastPeek).toBeNull();
   });
 });
 

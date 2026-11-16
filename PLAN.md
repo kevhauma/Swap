@@ -30,7 +30,7 @@ One file per ticket in [tickets/](tickets/).
 |---|---|---|---|---|
 | [ENG-1](tickets/ENG-1.md) | P0 | Engine | Match by rank, not by point value | done |
 | [ENG-2](tickets/ENG-2.md) | P1 | Engine | Player count 2–6 vs 2–8 | open |
-| [ENG-3](tickets/ENG-3.md) | P1 | Engine | Show *which* card was peeked to everyone | open |
+| [ENG-3](tickets/ENG-3.md) | P1 | Engine | Show *which* card was peeked to everyone | done |
 | [SRV-1](tickets/SRV-1.md) | P1 | Server | An offline player stalls the game | open |
 | [SRV-2](tickets/SRV-2.md) | P2 | Server | Server integration test | open |
 | [BOT-1](tickets/BOT-1.md) | P2 | Bots | Bots match opponent cards | open |

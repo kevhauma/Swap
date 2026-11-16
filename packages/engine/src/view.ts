@@ -31,6 +31,8 @@ export interface GameView {
   stackTopId: string | null;
   turnsTaken: number;
   swishBy: string | null;
+  /** Ids only, shown to everyone; the peeker gets the face through a `reveal` or the step. */
+  lastPeek: GameState['lastPeek'];
   log: string[];
 }
 
@@ -72,6 +74,7 @@ export function viewFor(s: GameState, playerId: string): GameView {
     stackTopId: s.stack.at(-1)?.id ?? null,
     turnsTaken: s.turnsTaken,
     swishBy: s.swishBy,
+    lastPeek: s.lastPeek,
     log: s.log,
   };
 }

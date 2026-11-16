@@ -29,11 +29,15 @@ the information is lost. The engine should put the peeked card id in every playe
 
 ## Acceptance criteria
 
-- [ ] Every peek kind sets the last peek: first peek, 7/8, 9/10, both black-K looks.
-- [ ] `viewFor` shows the ids to all players; faces stay hidden for everyone but the peeker.
-- [ ] Engine tests cover: an opponent's view contains the peeked id and no face, for each peek
-      kind; the hard-mode 6 (stack peek) shares no hand position.
-- [ ] `npm run check` passes.
+- [x] Every peek kind sets the last peek: first peek, 7/8, 9/10, both black-K looks. (`GameState.lastPeek`
+      in `packages/engine/src/game.ts`: reset at the top of `apply`, set by `peeked()` in `initialPeek`
+      and every `peek` branch; the second K look replaces the first)
+- [x] `viewFor` shows the ids to all players; faces stay hidden for everyone but the peeker. (`GameView.lastPeek`
+      in `packages/engine/src/view.ts` carries ids only; faces still reach the peeker only via `reveal` / step)
+- [x] Engine tests cover: an opponent's view contains the peeked id and no face, for each peek
+      kind; the hard-mode 6 (stack peek) shares no hand position. (`game.test.ts` › "peek position
+      (rule 3d)": first peek, 7/8 + cleared by next action, 9/10, both black-K looks, hard-mode 6)
+- [x] `npm run check` passes. (tsc clean, 33/33 vitest tests pass)
 
 ## Notes
 
