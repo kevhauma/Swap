@@ -14,7 +14,8 @@ else gets one last turn, then everyone reveals and the lowest score wins.
 
 ## 2. Components
 
-- Standard 52-card deck + Jokers (count not specified, assume 2).
+- Standard 52-card deck + 2 Jokers. (Later option: a custom deck setting to pick which card
+  sets are in play, like another game the group played.)
 - Per player: a row of 4 face-down cards.
 - Centre: draw **stack** (face down) and **open card** (top of the discard pile).
 
@@ -35,7 +36,8 @@ Best possible hand: **-2** (two red kings + two jokers, or fewer cards through m
 
 ## 4. Flow of a round
 
-1. **Deal**: 4 cards face down per player, flip one card to start the discard pile.
+1. **Deal**: 4 cards face down per player, then flip the top card of the remaining stack to
+   start the discard pile (it is never one of the players' cards).
 2. **First peek**: every player looks at **one** of their own cards. If it matches the open
    card's rank, they may place it straight away.
 3. **Turns** (clockwise). On your turn pick one:
@@ -44,7 +46,8 @@ Best possible hand: **-2** (two red kings + two jokers, or fewer cards through m
       face up on the discard pile.
    3. **Draw from the stack and use it**: discard it and trigger its power (if it has one).
 4. **Matching (any time, out of turn)**: if you know a card (yours *or an opponent's*) has the
-   same rank as the open card, place it on the discard pile.
+   same rank as the open card (same number or letter, colour does not matter), place it on the
+   discard pile.
    - Placing your own card: your hand shrinks.
    - Placing an opponent's card: you then give that opponent one of your cards.
    - **Wrong match** (rank does not match): you get a penalty card from the stack, face down,
@@ -67,10 +70,10 @@ These are the rules the engine implements.
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | How many Jokers? Deck size for 5+ players? | 2 Jokers; 2 decks above 4 players |
+| 1 | How many Jokers? Deck size for 5+ players? | 2 Jokers; 2 decks above 4 players. Custom deck (choose card sets) later |
 | 2 | Two players match the same open card at once | Server-ordered: first message wins, second gets "too late", no penalty |
-| 3 | When is matching allowed? ("in between rounds") | Any time during the deal peek and the turns, against the current open card |
-| 3a | What does "matches" mean? | Same **point value** (*rules.txt*). So a red K only matches a red K |
+| 3 | When is matching allowed? ("in between rounds") | Any time, against the current open card; no restrictions in the real game, so whatever the server handles. MVP: during the deal peek and the turns |
+| 3a | What does "matches" mean? | Same **rank**: the same number or letter on the card, not the point value. Colour does not matter: a red K matches a black K, a Joker matches a Joker |
 | 3b | Where does a used power card go? | It becomes the open card (*rules.txt*) |
 | 3c | Taking the open card: what is open next? | The card you swap out goes on top and becomes the open card |
 | 3d | Do others see *which* card is peeked at? | Yes, the position, never the value (*rules.txt*) |
@@ -80,7 +83,7 @@ These are the rules the engine implements.
 | 5 | Hard-mode 3: does swapping a 3 *out* of your hand count as "placing"? | Yes, any discard except a match |
 | 6 | When can you call swish-swish? | Instead of taking your turn; not before everyone had one turn |
 | 7 | Stack runs out | Reshuffle the discard pile, except the open card |
-| 8 | Ties, single round or match to N points? | Single round MVP, shared win on ties; multi-round scoring later |
+| 8 | Ties, single round or match to N points? | Single round MVP, shared win on ties. Later game modes: count round **wins** (how it is played now), or add up points and play to a target (e.g. 10 or 30) |
 | 9 | Penalty if the swish caller is *not* lowest? | None (as written); optional house rule later |
 | 10 | Does the UI remember peeked cards for you? | **No**: memory is the game. Show a peek for ~2 s, then flip back |
 
@@ -89,8 +92,9 @@ These are the rules the engine implements.
 - Layout (page 3): opponent row on top, stack + open card in the middle, your row at the
   bottom, a **turn indicator** dot next to the active player. Portrait, phone-first.
 - The 3D render (page 2) shows the mood: dark wood table, red card backs, an opponent avatar
-  ("Salat") and a timer. Treat this as a later visual upgrade, not the MVP.
-- Mocks are **2-player**. The engine should support 2–6 anyway; it costs nothing.
+  ("Salat") and a timer. Borrow the mood only: the game stays **2D**.
+- Mocks are **2-player**. The engine should support 2–6 anyway; it costs nothing. With more
+  players there is still **one winner** (lowest score), no ranking of the others.
 
 ---
 
@@ -121,7 +125,6 @@ These are the rules the engine implements.
 | Bots | Heuristic bot in `packages/engine` (remembers what it peeked, swaps high for low, calls swish below a threshold) | Single-player mode and fills empty seats |
 | Persistence | **None for MVP** (no accounts; room code + nickname). Add Redis only for multi-instance or crash recovery | Nothing to store yet |
 | Hosting | Static client on Cloudflare Pages / Netlify; server on Fly.io or Render (one instance, WebSockets) | Cheap, WebSocket-friendly |
-| Later, optional | React Three Fiber for the 3D table from the render | Swap the renderer only; engine and server unchanged |
 
 ### How hidden info flows
 
@@ -196,4 +199,4 @@ mocks, or accept a slightly off path.
    match race ordering. Bots sit in server rooms, so single-player uses the same path as
    multiplayer (no separate client-only mode to maintain).
 3. **Web client** for the mocks' layout: draw / take / swap / powers / match / swish.
-4. **Polish**: animations, sounds, hard-mode toggle, 2–6 players, then optional 3D table.
+4. **Polish**: animations, sounds, hard-mode toggle, 2–6 players, game modes (wins / points target).
