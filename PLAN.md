@@ -31,6 +31,7 @@ One file per ticket in [tickets/](tickets/).
 | [ENG-1](tickets/ENG-1.md) | P0 | Engine | Match by rank, not by point value | done |
 | [ENG-2](tickets/ENG-2.md) | P1 | Engine | Player count 2–6 vs 2–8 | open |
 | [ENG-3](tickets/ENG-3.md) | P1 | Engine | Show *which* card was peeked to everyone | done |
+| [ENG-4](tickets/ENG-4.md) | P1 | Engine | Open swap: a picked card that was matched away | open |
 | [SRV-1](tickets/SRV-1.md) | P1 | Server | An offline player stalls the game | open |
 | [SRV-2](tickets/SRV-2.md) | P2 | Server | Server integration test | done |
 | [BOT-1](tickets/BOT-1.md) | P2 | Bots | Bots match opponent cards | done |
@@ -39,6 +40,7 @@ One file per ticket in [tickets/](tickets/).
 | [WEB-3](tickets/WEB-3.md) | P2 | Web client | Sounds | open |
 | [WEB-4](tickets/WEB-4.md) | P2 | Web client | Animation gaps | open |
 | [WEB-5](tickets/WEB-5.md) | P2 | Web client | Table mood from the 3D render | open |
+| [WEB-6](tickets/WEB-6.md) | P1 | Web client | Draw from an empty stack | open |
 | [INF-1](tickets/INF-1.md) | P1 | Infra | CI on pull requests | open |
 | [INF-2](tickets/INF-2.md) | P1 | Infra | Deploy | open |
 | [MODE-1](tickets/MODE-1.md) | P3 | Game modes & options (later) | Multi-round games | open |
@@ -48,7 +50,7 @@ One file per ticket in [tickets/](tickets/).
 ## Order
 
 1. [ENG-1](tickets/ENG-1.md) (P0, small).
-2. [INF-1](tickets/INF-1.md), then [ENG-2](tickets/ENG-2.md), [ENG-3](tickets/ENG-3.md) + [WEB-1](tickets/WEB-1.md), [SRV-1](tickets/SRV-1.md), [INF-2](tickets/INF-2.md): first real online game with
+2. [INF-1](tickets/INF-1.md), then [ENG-2](tickets/ENG-2.md), [ENG-3](tickets/ENG-3.md) + [WEB-1](tickets/WEB-1.md), [SRV-1](tickets/SRV-1.md), [INF-2](tickets/INF-2.md), [ENG-4](tickets/ENG-4.md), [WEB-6](tickets/WEB-6.md): first real online game with
    friends.
 3. [WEB-2](tickets/WEB-2.md), [WEB-4](tickets/WEB-4.md), [BOT-1](tickets/BOT-1.md), [SRV-2](tickets/SRV-2.md), [WEB-3](tickets/WEB-3.md), [WEB-5](tickets/WEB-5.md).
 4. [MODE-1](tickets/MODE-1.md) first of the later options (it is how the group already plays), then [MODE-2](tickets/MODE-2.md) and [MODE-3](tickets/MODE-3.md).
