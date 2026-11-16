@@ -2,7 +2,8 @@ import { motion } from 'motion/react';
 import { useState } from 'react';
 import { cardName, isFaceUp, isRed, type Card, type CardView } from '@swap/engine';
 
-const SIZES = { sm: 'w-9 sm:w-11', md: 'w-16 sm:w-20' };
+// sm stays 44 px wide on phones: the minimum tap target for spy and swaps.
+const SIZES = { sm: 'w-11', md: 'w-16 sm:w-20' };
 
 function Face({ card }: { card: Card }) {
   return card.rank === 'JOKER' ? (

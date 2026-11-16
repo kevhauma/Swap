@@ -26,11 +26,19 @@ wide.
 
 ## Acceptance criteria
 
-- [ ] 6 seats on a 360 × 740 viewport: no horizontal scroll, every card visible.
-- [ ] Opponent cards keep a hit area of at least 44 × 44 px (spy and swaps tap them).
-- [ ] A hand of 6+ cards (after penalties) still fits.
-- [ ] `npm run check` passes.
-- [ ] Verified live in the browser: 2, 4 and 6 seats (bots) at 360 px width.
+- [x] 6 seats on a 360 × 740 viewport: no horizontal scroll, every card visible. (Headless Edge
+  via CDP at 360 × 740, 5 bots: `scrollWidth` 360 = `clientWidth`, 0 cards outside 0–360 px; with
+  opponents one per line (`renderHand(…, row)` in `Board.tsx`) and the felt gaps tightened, the
+  bottom of your own hand sits at y = 734 with a two-line hint, so all 24 dealt cards show without
+  scrolling.)
+- [x] Opponent cards keep a hit area of at least 44 × 44 px (spy and swaps tap them). (`SIZES.sm`
+  in `PlayingCard.tsx` is now `w-11` at every width: 44 × 64 px; measured ≥ 45 × 65 bounding boxes
+  including the fan tilt.)
+- [x] A hand of 6+ cards (after penalties) still fits. (Same harness with every hand padded to 7
+  cards at 2, 4 and 6 seats: hands wrap to a second row (third for your own), `scrollWidth` stays
+  360, 0 cards off-screen horizontally. The page then scrolls vertically.)
+- [x] `npm run check` passes. (tsc clean, 33/33 Vitest tests.)
+- [ ] Verified live in the browser: 2, 4 and 6 seats (bots) at 360 px width. — not ticked: browser verification pending
 
 ## Notes
 

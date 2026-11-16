@@ -158,11 +158,16 @@ export function Board({
                       : 'Tap one of your cards to look at it',
                 }[step.kind];
 
-  const renderHand = (player: PlayerView, size: 'sm' | 'md') => {
+  /** `row`: name beside the cards, one opponent per line, so 5 opponents fit a 360 px phone. */
+  const renderHand = (player: PlayerView, size: 'sm' | 'md', row = false) => {
     const theirTurn = view.turn === player.id;
     return (
-      <section key={player.id} className="flex flex-col items-center gap-3">
-        <h2 className={`flex items-center gap-3 font-bold ${size === 'md' ? 'text-2xl' : 'text-xl'}`}>
+      <section key={player.id} className={row ? 'flex items-center gap-2' : 'flex flex-col items-center gap-3'}>
+        <h2
+          className={`flex font-bold ${
+            row ? 'w-16 shrink-0 flex-col items-start text-lg wrap-anywhere' : `flex-wrap items-center justify-center gap-x-3 ${size === 'md' ? 'text-2xl' : 'text-xl'}`
+          }`}
+        >
           <span className={`relative ${theirTurn ? 'px-3' : ''}`}>
             {theirTurn ? <ChalkLoop /> : player !== me && <ChalkUnderline />}
             {player === me ? 'You' : player.name}
@@ -178,7 +183,7 @@ export function Board({
           )}
           {player.score !== undefined && <span className="text-turn">{player.score} pts</span>}
         </h2>
-        <div className={`fan flex flex-wrap justify-center ${size === 'sm' ? 'gap-0.5' : 'gap-2'} ${player.locked ? 'opacity-70 saturate-50' : ''}`}>
+        <div className={`fan flex flex-wrap ${row ? 'flex-1' : 'justify-center'} ${size === 'sm' ? 'gap-0.5' : 'gap-2'} ${player.locked ? 'opacity-70 saturate-50' : ''}`}>
         {player.cards.map((card) => (
           <PlayingCard
             key={card.id}
@@ -208,10 +213,8 @@ export function Board({
 
   return (
     <div className="min-h-dvh bg-rim p-2">
-      <div className="felt mx-auto flex min-h-[calc(100dvh-1rem)] max-w-xl flex-col gap-6 px-4 py-5">
-        <div className={`grid gap-x-3 gap-y-6 ${opponents.length > 1 ? 'grid-cols-2' : ''}`}>
-          {opponents.map((p) => renderHand(p, 'sm'))}
-        </div>
+      <div className="felt mx-auto flex min-h-[calc(100dvh-1rem)] max-w-xl flex-col gap-3 px-4 py-4">
+        <div className="flex flex-col gap-2">{opponents.map((p) => renderHand(p, 'sm', opponents.length > 1))}</div>
 
         <div className="flex items-end justify-center gap-7">
           <div className="relative flex flex-col items-center gap-1">
