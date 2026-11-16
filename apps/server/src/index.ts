@@ -15,7 +15,9 @@ import {
   type GameState,
   type Reveal,
   type ServerMessage,
+  type Tally,
 } from '@swap/engine';
+import { newTally, parseMatch, recordRound, roundWinners } from './tally.ts';
 
 interface Seat {
   id: string;
@@ -32,6 +34,8 @@ interface Room {
   code: string;
   seats: Seat[];
   game: GameState | null;
+  /** Kept across rounds until someone reaches the target. */
+  tally: Tally | null;
   cleanup?: NodeJS.Timeout;
 }
 
@@ -60,7 +64,7 @@ const broadcast = (room: Room) => {
     return { id: s.id, name: s.name, bot, away: s.away, online: bot || !!s.socket };
   });
   for (const seat of room.seats)
-    send(seat.socket, { type: 'room', room: room.code, seats, view: room.game && viewFor(room.game, seat.id) });
+    send(seat.socket, { type: 'room', room: room.code, seats, view: room.game && viewFor(room.game, seat.id), tally: room.tally });
   room.seats.forEach((seat) => {
     if (seat.bot) scheduleBot(room, seat);
     else if (!seat.socket && running(room)) seat.awayTimer ??= setTimeout(() => takeOver(room, seat), AWAY_AFTER_MS);
@@ -88,6 +92,8 @@ const deliver = (room: Room, reveals: Reveal[]) => {
 const act = (room: Room, seat: Seat, action: Action) => {
   if (!room.game) throw new RuleError('The game has not started');
   const { state, reveals } = apply(room.game, seat.id, action, ctx);
+  if (room.tally && state.phase === 'ended' && room.game.phase !== 'ended')
+    room.tally = recordRound(room.tally, roundWinners(state));
   room.game = state;
   deliver(room, reveals);
   broadcast(room);
@@ -115,7 +121,7 @@ const join = (socket: WebSocket, msg: Extract<ClientMessage, { type: 'join' }>):
   if (!/^[A-Z0-9]{3,8}$/.test(code)) throw new RuleError('Room codes are 3 to 8 letters or digits');
   if (!name) throw new RuleError('Enter a name');
 
-  const room = rooms.get(code) ?? { code, seats: [], game: null };
+  const room = rooms.get(code) ?? { code, seats: [], game: null, tally: null };
   rooms.set(code, room);
   clearTimeout(room.cleanup);
 
@@ -181,6 +187,8 @@ const onConnection = (socket: WebSocket) => {
           break;
         case 'start':
           if (room.game && room.game.phase !== 'ended') throw new RuleError('The game is running');
+          // A match in progress keeps its mode; otherwise this round opens a new match.
+          if (!room.tally || room.tally.champions.length) room.tally = newTally(parseMatch(msg.match));
           room.seats.forEach((s) => s.bot && (s.bot.memory = {}));
           room.game = createGame(room.seats, { hardMode: msg.hardMode === true }, ctx);
           broadcast(room);

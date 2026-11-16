@@ -18,6 +18,7 @@ export function App() {
   const [name, setName] = useState(() => storage.get(NAME_KEY) ?? '');
   const [code, setCode] = useState(urlRoom);
   const [hardMode, setHardMode] = useState(false);
+  const [target, setTarget] = useState(1);
 
   const enter = (roomCode: string) => {
     storage.set(NAME_KEY, name.trim());
@@ -102,8 +103,9 @@ export function App() {
           view={view}
           away={room.seats.filter((s) => s.away).map((s) => s.id)}
           revealed={revealed}
+          tally={room.tally}
           act={act}
-          playAgain={() => send({ type: 'start', hardMode: view.hardMode })}
+          playAgain={() => send({ type: 'start', hardMode: view.hardMode, match: room.tally?.match ?? { mode: 'wins', target: 1 } })}
         />
         {toast}
       </>
@@ -134,13 +136,24 @@ export function App() {
         <input type="checkbox" checked={hardMode} onChange={(e) => setHardMode(e.target.checked)} />
         Hard mode (3s cost a card, 6s show the top of the stack)
       </label>
+      <label className="flex items-center justify-between gap-2 text-sm">
+        Play
+        <select className="rounded-lg bg-table-deep px-3 py-2" value={target} onChange={(e) => setTarget(Number(e.target.value))}>
+          <option value={1}>Single round</option>
+          {[2, 3, 5, 10].map((n) => (
+            <option key={n} value={n}>
+              First to {n} round wins
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="flex gap-2">
         <button className={`${button} flex-1`} onClick={() => send({ type: 'addBot' })} disabled={room.seats.length >= MAX_PLAYERS}>
           Add bot
         </button>
         <button
           className={`${button} flex-1`}
-          onClick={() => send({ type: 'start', hardMode })}
+          onClick={() => send({ type: 'start', hardMode, match: { mode: 'wins', target } })}
           disabled={room.seats.length < 2}
         >
           Start

@@ -6,6 +6,7 @@ import {
   type CardView,
   type GameView,
   type PlayerView,
+  type Tally,
 } from '@swap/engine';
 import { PlayingCard, Slot } from './PlayingCard.tsx';
 import { isMuted, setMuted } from './sounds.ts';
@@ -67,6 +68,7 @@ export function Board({
   view,
   away,
   revealed,
+  tally,
   act,
   playAgain,
 }: {
@@ -74,6 +76,7 @@ export function Board({
   /** Ids of seats a bot plays while their player is offline. */
   away: string[];
   revealed: Record<string, Card>;
+  tally: Tally | null;
   act: (action: Action) => void;
   playAgain: () => void;
 }) {
@@ -237,7 +240,12 @@ export function Board({
 
   const ended = view.phase === 'ended';
   const lowest = Math.min(...view.players.map((p) => p.score ?? Infinity));
-  const winners = view.players.filter((p) => p.score === lowest).map((p) => (p === me ? 'You' : p.name));
+  const names = (ps: PlayerView[]) => ps.map((p) => (p === me ? 'You' : p.name));
+  const won = (who: string[]) => `${who.join(' & ')} ${who.length > 1 || who[0] === 'You' ? 'win' : 'wins'}`;
+  const winners = names(view.players.filter((p) => p.score === lowest));
+  // A single round needs no scoreboard.
+  const match = tally && tally.match.target > 1 ? tally : null;
+  const champions = names(view.players.filter((p) => match?.champions.includes(p.id)));
   const toggle = (kind: 'match' | 'takeOpen') =>
     setMode(mode.kind === kind ? { kind: 'idle' } : { kind });
 
@@ -334,15 +342,30 @@ export function Board({
           )}
           {ended && (
             <button className={button} onClick={playAgain}>
-              Play again
+              {!match ? 'Play again' : champions.length ? 'New match' : 'Next round'}
             </button>
           )}
         </div>
 
         {ended && (
           <p className="text-center text-3xl font-bold text-turn">
-            {winners.join(' & ')} {winners.length > 1 || winners[0] === 'You' ? 'win' : 'wins'} with {lowest}
+            {won(winners)} with {lowest}
           </p>
+        )}
+
+        {ended && match && (
+          <section aria-label="Scoreboard" className="mx-auto w-full max-w-xs text-center">
+            <h2 className="text-chalk/70">Round wins, first to {match.match.target}</h2>
+            <ul>
+              {view.players.map((p) => (
+                <li key={p.id} className="flex justify-between text-lg">
+                  <span>{p === me ? 'You' : p.name}</span>
+                  <span>{match.wins[p.id] ?? 0}</span>
+                </li>
+              ))}
+            </ul>
+            {!!champions.length && <p className="text-2xl font-bold text-turn">{won(champions)} the match</p>}
+          </section>
         )}
 
         <div className="mt-auto flex items-end gap-2">

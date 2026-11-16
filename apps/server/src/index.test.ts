@@ -96,7 +96,7 @@ describe('server rooms', () => {
   it('rejects the second of two matches on one open card as too late, without penalty', async () => {
     const alice = await join('RACE', 'Alice');
     const bob = await join('RACE', 'Bob');
-    alice.c.send({ type: 'start', hardMode: false });
+    alice.c.send({ type: 'start', hardMode: false, match: { mode: 'wins', target: 1 } });
     const { seats, view } = await latest(bob.c, 'room', (m) => m.view !== null);
     // The server's Ctx is fresh and deterministic, so the same deal can be rebuilt here.
     const deal = createGame(seats, { hardMode: false }, fixedCtx());
@@ -113,5 +113,56 @@ describe('server rooms', () => {
     const after = (await latest(bob.c, 'room')).view!;
     expect(after.players.find((p) => p.id === bob.joined.playerId)!.cards).toHaveLength(4);
     expect(bob.c.msgs.some((m) => m.type === 'reveal' && m.reason === 'mismatch')).toBe(false);
+  });
+
+  // Runs after the race test, which needs the server's Ctx to be untouched by earlier games.
+  it('keeps the round-win tally across rounds until the target, then starts a new match', async () => {
+    const players = [await join('MATCH', 'Alice'), await join('MATCH', 'Bob')];
+    const [alice] = players;
+    alice.c.send({ type: 'start', hardMode: true, match: { mode: 'nope', target: 2 } as never });
+    expect((await latest(alice.c, 'error')).message).toMatch(/round wins/);
+
+    /** Starts a round; everyone peeks, takes the open card until all had a turn, then swishes. */
+    const playRound = async (target: number) => {
+      players.forEach(({ c }) => (c.msgs.length = 0));
+      alice.c.send({ type: 'start', hardMode: false, match: { mode: 'wins', target } });
+      const first = await latest(alice.c, 'room', (m) => m.view?.phase === 'peek');
+      for (const { c } of players) {
+        const { view } = await latest(c, 'room', (m) => m.view?.phase === 'peek');
+        c.send({ type: 'action', action: { type: 'initialPeek', cardId: view!.players.find((p) => p.id === view!.you)!.cards[0].id } });
+      }
+      for (let done = first; done.view!.phase !== 'ended'; ) {
+        const logged = done.view!.log.length;
+        const turn = done.view!.turn;
+        const player = players.find((p) => p.joined.playerId === turn);
+        if (player) {
+          const view = done.view!;
+          const own = view.players.find((p) => p.id === turn)!.cards[0].id;
+          player.c.send({ type: 'action', action: view.turnsTaken < 2 ? { type: 'takeOpen', replace: own } : { type: 'swish' } });
+        }
+        done = await latest(alice.c, 'room', (m) => m.view!.log.length > logged);
+      }
+      const ended = await latest(alice.c, 'room', (m) => m.view?.phase === 'ended');
+      const lowest = Math.min(...ended.view!.players.map((p) => p.score!));
+      return { tally: ended.tally!, winners: ended.view!.players.filter((p) => p.score === lowest).map((p) => p.id) };
+    };
+
+    const first = await playRound(2);
+    expect(first.tally.wins).toEqual(Object.fromEntries(first.winners.map((id) => [id, 1])));
+    expect(first.tally.champions).toEqual([]);
+
+    // Mid-match the server keeps the match's mode, whatever the next start says.
+    const second = await playRound(1);
+    expect(second.tally.match.target).toBe(2);
+    for (const id of second.winners) expect(second.tally.wins[id]).toBe((first.tally.wins[id] ?? 0) + 1);
+    const champions = Object.keys(second.tally.wins).filter((id) => second.tally.wins[id] === 2);
+    expect(second.tally.champions).toEqual(champions);
+
+    // The fixed Ctx deals every round alike, so the same winners reach 2.
+    expect(champions).toEqual(first.winners);
+    alice.c.msgs.length = 0;
+    alice.c.send({ type: 'start', hardMode: false, match: { mode: 'wins', target: 3 } });
+    const fresh = await latest(alice.c, 'room', (m) => m.view?.phase === 'peek');
+    expect(fresh.tally).toEqual({ match: { mode: 'wins', target: 3 }, wins: {}, champions: [] });
   });
 });

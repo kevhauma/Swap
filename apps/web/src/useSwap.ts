@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Action, Card, ClientMessage, GameView, Seat, ServerMessage } from '@swap/engine';
+import type { Action, Card, ClientMessage, GameView, Seat, ServerMessage, Tally } from '@swap/engine';
 import { play, soundFor } from './sounds.ts';
 
 const WS_URL: string =
@@ -15,6 +15,7 @@ export interface RoomState {
   playerId: string;
   seats: Seat[];
   view: GameView | null;
+  tally: Tally | null;
 }
 
 const tokenKey = (room: string) => `swap:token:${room}`;
@@ -85,7 +86,7 @@ export function useSwap() {
           } else if (msg.type === 'room') {
             play(soundFor(lastView, msg.view));
             lastView = msg.view;
-            setRoom({ code: msg.room, playerId, seats: msg.seats, view: msg.view });
+            setRoom({ code: msg.room, playerId, seats: msg.seats, view: msg.view, tally: msg.tally });
           } else if (msg.type === 'reveal') {
             // Own peeks already sound from the view's lastPeek; a stack peek and a wrong match have no other signal.
             play(msg.reason === 'mismatch' ? 'wrong' : msg.reason === 'stack' ? 'flip' : null);
