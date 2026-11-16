@@ -26,16 +26,26 @@ come back. Reuse the existing bot to play the seat while it is away.
   nothing the player knew).
 - When the player reconnects with their token, they take the seat back immediately.
 - The seat list shows "away (bot playing)".
+  - *2026-11-16: the lobby seat list is hidden while a game runs, so the label also shows next to
+    the player's name on the board (`Board.tsx`), where the seat is visible mid-game.*
 
 ## Acceptance criteria
 
-- [ ] A seat offline for 30 s in a running game gets bot moves; an online seat never does.
-- [ ] Reconnecting stops the bot before its next move; the player keeps their cards.
-- [ ] The takeover bot starts with empty memory.
-- [ ] `Seat` in `protocol.ts` carries the away state; the client shows "away (bot playing)".
-- [ ] `npm run check` passes.
+- [x] A seat offline for 30 s in a running game gets bot moves; an online seat never does.
+      (`broadcast`/`takeOver` in `apps/server/src/index.ts`, `AWAY_AFTER_MS = 30_000`; end-to-end
+      ws script against the real server: no move at 28 s, seat away and its turn played at 31-35 s,
+      online Bob's turn left untouched)
+- [x] Reconnecting stops the bot before its next move; the player keeps their cards.
+      (`join` clears `awayTimer` and the takeover bot's timer; e2e script: same `playerId`, same
+      card ids as the bot left them, no bot move on the player's next turn)
+- [x] The takeover bot starts with empty memory. (`takeOver` sets `seat.bot = { memory: {} }`;
+      reconnect drops it, so each takeover starts fresh)
+- [x] `Seat` in `protocol.ts` carries the away state; the client shows "away (bot playing)".
+      (`Seat.away` in `packages/engine/src/protocol.ts`; label in the lobby list in `App.tsx` and
+      next to the name in `Board.tsx`; e2e script saw `away: true` then `false` in `room` messages)
+- [x] `npm run check` passes. (tsc clean, 33/33 tests)
 - [ ] Verified live in the browser: close one tab on its turn, the game continues after ~30 s;
-      reopen it, the seat is yours again.
+      reopen it, the seat is yours again. — not ticked: browser verification pending
 
 ## Notes
 

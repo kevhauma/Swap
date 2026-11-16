@@ -23,6 +23,9 @@ interface Seat {
   token: string;
   socket: WebSocket | null;
   bot: { memory: BotMemory; timer?: NodeJS.Timeout } | null;
+  /** A human seat whose player went offline mid-game; `bot` plays it until they reconnect. */
+  away: boolean;
+  awayTimer?: NodeJS.Timeout;
 }
 
 interface Room {
@@ -36,6 +39,7 @@ const PORT = Number(process.env.PORT ?? 3001);
 const BOT_DELAY_MS = 1200;
 const EMPTY_ROOM_TTL_MS = 10 * 60_000;
 const HEARTBEAT_MS = 30_000;
+const AWAY_AFTER_MS = 30_000;
 
 const ctx: Ctx = {
   random: () => randomInt(2 ** 32) / 2 ** 32,
@@ -48,11 +52,28 @@ const send = (socket: WebSocket | null, message: ServerMessage) => {
   if (socket && socket.readyState === socket.OPEN) socket.send(JSON.stringify(message));
 };
 
+const running = (room: Room) => !!room.game && room.game.phase !== 'ended';
+
 const broadcast = (room: Room) => {
-  const seats = room.seats.map((s) => ({ id: s.id, name: s.name, bot: !!s.bot, online: !!s.bot || !!s.socket }));
+  const seats = room.seats.map((s) => {
+    const bot = !!s.bot && !s.away;
+    return { id: s.id, name: s.name, bot, away: s.away, online: bot || !!s.socket };
+  });
   for (const seat of room.seats)
     send(seat.socket, { type: 'room', room: room.code, seats, view: room.game && viewFor(room.game, seat.id) });
-  room.seats.forEach((seat) => seat.bot && scheduleBot(room, seat));
+  room.seats.forEach((seat) => {
+    if (seat.bot) scheduleBot(room, seat);
+    else if (!seat.socket && running(room)) seat.awayTimer ??= setTimeout(() => takeOver(room, seat), AWAY_AFTER_MS);
+  });
+};
+
+/** A bot plays an offline seat, knowing nothing the player knew. */
+const takeOver = (room: Room, seat: Seat) => {
+  seat.awayTimer = undefined;
+  if (seat.socket || !running(room)) return;
+  seat.away = true;
+  seat.bot = { memory: {} };
+  broadcast(room);
 };
 
 const deliver = (room: Room, reveals: Reveal[]) => {
@@ -98,12 +119,20 @@ const join = (socket: WebSocket, msg: Extract<ClientMessage, { type: 'join' }>):
   rooms.set(code, room);
   clearTimeout(room.cleanup);
 
-  let seat = room.seats.find((s) => !s.bot && s.token === msg.token);
+  // Bot tokens never leave the server, so only a human's own token matches.
+  let seat = room.seats.find((s) => s.token === msg.token);
   if (!seat) {
-    if (room.game && room.game.phase !== 'ended') throw new RuleError('That game has already started');
+    if (running(room)) throw new RuleError('That game has already started');
     if (room.seats.length >= MAX_PLAYERS) throw new RuleError('The room is full');
-    seat = { id: randomUUID().slice(0, 8), name, token: randomUUID(), socket: null, bot: null };
+    seat = { id: randomUUID().slice(0, 8), name, token: randomUUID(), socket: null, bot: null, away: false };
     room.seats.push(seat);
+  }
+  clearTimeout(seat.awayTimer);
+  seat.awayTimer = undefined;
+  if (seat.away) {
+    clearTimeout(seat.bot?.timer);
+    seat.bot = null;
+    seat.away = false;
   }
   if (seat.socket && seat.socket !== socket) seat.socket.close(4000, 'Joined from another tab');
   seat.socket = socket;
@@ -135,10 +164,11 @@ wss.on('connection', (socket) => {
           if (room.seats.length >= MAX_PLAYERS) throw new RuleError('The room is full');
           room.seats.push({
             id: randomUUID().slice(0, 8),
-            name: `Bot ${room.seats.filter((s) => s.bot).length + 1}`,
+            name: `Bot ${room.seats.filter((s) => s.bot && !s.away).length + 1}`,
             token: randomUUID(),
             socket: null,
             bot: { memory: {} },
+            away: false,
           });
           broadcast(room);
           break;
@@ -169,7 +199,10 @@ wss.on('connection', (socket) => {
     broadcast(room);
     if (room.seats.every((s) => s.bot || !s.socket))
       room.cleanup = setTimeout(() => {
-        room.seats.forEach((s) => clearTimeout(s.bot?.timer));
+        room.seats.forEach((s) => {
+          clearTimeout(s.bot?.timer);
+          clearTimeout(s.awayTimer);
+        });
         rooms.delete(room.code);
       }, EMPTY_ROOM_TTL_MS);
   });

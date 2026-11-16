@@ -14,6 +14,8 @@ export interface Seat {
   name: string;
   bot: boolean;
   online: boolean;
+  /** Offline mid-game; a bot plays the seat until the player reconnects. */
+  away: boolean;
 }
 
 /** WebSocket messages, server to browser. */

@@ -90,7 +90,13 @@ export function App() {
     return (
       <>
         {offline}
-        <Board view={view} revealed={revealed} act={act} playAgain={() => send({ type: 'start', hardMode: view.hardMode })} />
+        <Board
+          view={view}
+          away={room.seats.filter((s) => s.away).map((s) => s.id)}
+          revealed={revealed}
+          act={act}
+          playAgain={() => send({ type: 'start', hardMode: view.hardMode })}
+        />
         {toast}
       </>
     );
@@ -112,7 +118,7 @@ export function App() {
               {seat.name}
               {seat.id === room.playerId && ' (you)'}
             </span>
-            <span className="text-sm text-slot">{seat.bot ? 'bot' : seat.online ? 'ready' : 'offline'}</span>
+            <span className="text-sm text-slot">{seat.bot ? 'bot' : seat.away ? 'away (bot playing)' : seat.online ? 'ready' : 'offline'}</span>
           </li>
         ))}
       </ul>

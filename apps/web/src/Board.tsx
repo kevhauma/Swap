@@ -56,11 +56,14 @@ const LockIcon = () => (
 
 export function Board({
   view,
+  away,
   revealed,
   act,
   playAgain,
 }: {
   view: GameView;
+  /** Ids of seats a bot plays while their player is offline. */
+  away: string[];
   revealed: Record<string, Card>;
   act: (action: Action) => void;
   playAgain: () => void;
@@ -166,6 +169,7 @@ export function Board({
             {theirTurn && <span className="sr-only"> (their turn)</span>}
           </span>
           {theirTurn && player === me && <span className="-rotate-6 text-base font-normal">your go!</span>}
+          {away.includes(player.id) && <span className="text-sm font-normal text-slot">away (bot playing)</span>}
           {player.locked && (
             <span title="Swish-swished: locked" className="flex rotate-6 items-center gap-1 text-sm">
               <LockIcon />
