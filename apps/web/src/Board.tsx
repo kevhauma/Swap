@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import {
   powerOf,
   type Action,
@@ -42,10 +42,11 @@ const ChalkLoop = () => (
   </svg>
 );
 
-const ChalkUnderline = () => (
-  <svg viewBox="0 0 100 7" preserveAspectRatio="none" aria-hidden className="absolute -inset-x-1.5 -bottom-1 h-[7px] w-[calc(100%+12px)] opacity-80">
-    <path d="M2 4c18-3 34 1 50-1s30-1 46 1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-  </svg>
+/** Poker-chip avatar with the player's initials; the hue steps by the golden angle per seat, so no two seats match. */
+const Avatar = ({ name, seat }: { name: string; seat: number }) => (
+  <span className="avatar" style={{ '--hue': (seat * 137.5) % 360 } as CSSProperties} aria-hidden>
+    {name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join('').toUpperCase()}
+  </span>
 );
 
 const LockIcon = () => (
@@ -172,9 +173,22 @@ export function Board({
                       : 'Tap one of your cards to look at it',
                 }[step.kind];
 
-  /** `row`: name beside the cards, one opponent per line, so 5 opponents fit a 360 px phone. */
+  /** `row`: name plate beside the cards, one opponent per line, so 5 opponents fit a 360 px phone. */
   const renderHand = (player: PlayerView, size: 'sm' | 'md', row = false) => {
     const theirTurn = view.turn === player.id;
+    // In a row the badges share the avatar's line, so the plate stays within the 64 px card height.
+    const lock = player.locked && (
+      <span title="Swish-swished: locked" className="flex rotate-6 items-center gap-1 text-sm">
+        <LockIcon />
+        <span className={row ? 'sr-only' : ''}>locked</span>
+      </span>
+    );
+    const score = player.score !== undefined && (
+      <span className="text-turn">
+        {player.score}
+        <span className={row ? 'sr-only' : ''}> pts</span>
+      </span>
+    );
     return (
       <section key={player.id} className={row ? 'flex items-center gap-2' : 'flex flex-col items-center gap-3'}>
         <h2
@@ -182,20 +196,20 @@ export function Board({
             row ? 'w-16 shrink-0 flex-col items-start text-lg wrap-anywhere' : `flex-wrap items-center justify-center gap-x-3 ${size === 'md' ? 'text-2xl' : 'text-xl'}`
           }`}
         >
-          <span className={`relative ${theirTurn ? 'px-3' : ''}`}>
-            {theirTurn ? <ChalkLoop /> : player !== me && <ChalkUnderline />}
+          <span className={`plate ${row ? 'flex-col items-start' : 'items-center gap-2'} ${theirTurn ? 'their-turn' : ''}`}>
+            {theirTurn && <ChalkLoop />}
+            <span className="flex flex-wrap items-center gap-1">
+              <Avatar name={player.name} seat={view.players.indexOf(player)} />
+              {row && lock}
+              {row && score}
+            </span>
             {player === me ? 'You' : player.name}
             {theirTurn && <span className="sr-only"> (their turn)</span>}
           </span>
           {theirTurn && player === me && <span className="-rotate-6 text-base font-normal">your go!</span>}
           {away.includes(player.id) && <span className="text-sm font-normal text-slot">away (bot playing)</span>}
-          {player.locked && (
-            <span title="Swish-swished: locked" className="flex rotate-6 items-center gap-1 text-sm">
-              <LockIcon />
-              locked
-            </span>
-          )}
-          {player.score !== undefined && <span className="text-turn">{player.score} pts</span>}
+          {!row && lock}
+          {!row && score}
         </h2>
         <div className={`fan flex flex-wrap ${row ? 'flex-1' : 'justify-center'} ${size === 'sm' ? 'gap-0.5' : 'gap-2'} ${player.locked ? 'opacity-70 saturate-50' : ''}`}>
         {player.cards.map((card) => (
