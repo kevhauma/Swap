@@ -17,7 +17,7 @@ import {
   type ServerMessage,
   type Tally,
 } from '@swap/engine';
-import { newTally, parseMatch, recordRound, roundWinners } from './tally.ts';
+import { newTally, parseMatch, recordRound, roundScores } from './tally.ts';
 
 interface Seat {
   id: string;
@@ -93,7 +93,7 @@ const act = (room: Room, seat: Seat, action: Action) => {
   if (!room.game) throw new RuleError('The game has not started');
   const { state, reveals } = apply(room.game, seat.id, action, ctx);
   if (room.tally && state.phase === 'ended' && room.game.phase !== 'ended')
-    room.tally = recordRound(room.tally, roundWinners(state));
+    room.tally = recordRound(room.tally, roundScores(state));
   room.game = state;
   deliver(room, reveals);
   broadcast(room);

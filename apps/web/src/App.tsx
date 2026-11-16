@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MAX_PLAYERS } from '@swap/engine';
+import { MAX_PLAYERS, type Match } from '@swap/engine';
 import { Board } from './Board.tsx';
 import { unlockAudio } from './sounds.ts';
 import { hasToken, storage, useSwap } from './useSwap.ts';
@@ -7,6 +7,13 @@ import { hasToken, storage, useSwap } from './useSwap.ts';
 const NAME_KEY = 'swap:name';
 const randomCode = () => Math.random().toString(36).slice(2, 6).toUpperCase().padEnd(4, 'X');
 const urlRoom = () => new URLSearchParams(location.search).get('room')?.toUpperCase() ?? '';
+
+/** The lobby's match presets; the server validates whatever arrives. */
+const MATCHES: [label: string, match: Match][] = [
+  ['Single round', { mode: 'wins', target: 1 }],
+  ...[2, 3, 5, 10].map((n): [string, Match] => [`First to ${n} round wins`, { mode: 'wins', target: n }]),
+  ...[10, 30, 50].map((n): [string, Match] => [`Points to ${n}, lowest total wins`, { mode: 'points', target: n }]),
+];
 
 const input =
   'w-full rounded-lg bg-table-deep px-4 py-3 text-white placeholder:text-slot/60 outline-none focus:ring-2 focus:ring-turn';
@@ -18,7 +25,7 @@ export function App() {
   const [name, setName] = useState(() => storage.get(NAME_KEY) ?? '');
   const [code, setCode] = useState(urlRoom);
   const [hardMode, setHardMode] = useState(false);
-  const [target, setTarget] = useState(1);
+  const [preset, setPreset] = useState(0);
 
   const enter = (roomCode: string) => {
     storage.set(NAME_KEY, name.trim());
@@ -138,11 +145,10 @@ export function App() {
       </label>
       <label className="flex items-center justify-between gap-2 text-sm">
         Play
-        <select className="rounded-lg bg-table-deep px-3 py-2" value={target} onChange={(e) => setTarget(Number(e.target.value))}>
-          <option value={1}>Single round</option>
-          {[2, 3, 5, 10].map((n) => (
-            <option key={n} value={n}>
-              First to {n} round wins
+        <select className="rounded-lg bg-table-deep px-3 py-2" value={preset} onChange={(e) => setPreset(Number(e.target.value))}>
+          {MATCHES.map(([label], i) => (
+            <option key={label} value={i}>
+              {label}
             </option>
           ))}
         </select>
@@ -153,7 +159,7 @@ export function App() {
         </button>
         <button
           className={`${button} flex-1`}
-          onClick={() => send({ type: 'start', hardMode, match: { mode: 'wins', target } })}
+          onClick={() => send({ type: 'start', hardMode, match: MATCHES[preset][1] })}
           disabled={room.seats.length < 2}
         >
           Start

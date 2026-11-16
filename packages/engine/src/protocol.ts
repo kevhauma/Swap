@@ -18,18 +18,18 @@ export interface Seat {
   away: boolean;
 }
 
-/** How a match is won: first to `target` round wins. A single round is a target of 1. */
-export interface Match {
-  mode: 'wins';
-  target: number;
-}
+/**
+ * How a match is won. `wins`: first to `target` round wins; a single round is a target of 1.
+ * `points`: round scores add up; once a total reaches `target` after a round, the lowest total wins.
+ */
+export type Match = { mode: 'wins'; target: number } | { mode: 'points'; target: number };
 
 /** The room's score across rounds; the engine itself plays one round. */
 export interface Tally {
   match: Match;
-  /** Round wins by seat id; a shared win counts for every winner. */
-  wins: Record<string, number>;
-  /** Seats that reached the target, several if they got there in the same round; non-empty means the match is over. */
+  /** By seat id: round wins (a shared win counts for every winner) or, in points mode, the points total. */
+  totals: Record<string, number>;
+  /** The match winners (wins: everyone who reached the target; points: the lowest totals); non-empty means the match is over. */
   champions: string[];
 }
 

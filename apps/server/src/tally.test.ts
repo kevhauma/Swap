@@ -1,47 +1,63 @@
 import { describe, expect, it } from 'vitest';
 import { createGame, RuleError, type Card, type Rank } from '@swap/engine';
-import { newTally, parseMatch, recordRound, roundWinners } from './tally.ts';
+import { newTally, parseMatch, recordRound, roundScores } from './tally.ts';
 
 describe('match tally', () => {
   const firstTo = (target: number) => newTally({ mode: 'wins', target });
+  const toPoints = (target: number) => newTally({ mode: 'points', target });
+  const play = (tally: ReturnType<typeof newTally>, ...rounds: Record<string, number>[]) => rounds.reduce(recordRound, tally);
 
-  it('counts one win per round for the winner', () => {
-    const tally = recordRound(recordRound(firstTo(3), ['a']), ['b']);
-    expect(tally.wins).toEqual({ a: 1, b: 1 });
+  it('counts one win per round for the lowest hand', () => {
+    const tally = play(firstTo(3), { a: 1, b: 5 }, { a: 7, b: 2 });
+    expect(tally.totals).toEqual({ a: 1, b: 1 });
     expect(tally.champions).toEqual([]);
   });
 
   it('counts a shared win for every winner', () => {
-    expect(recordRound(firstTo(3), ['a', 'b']).wins).toEqual({ a: 1, b: 1 });
+    expect(play(firstTo(3), { a: 1, b: 1, c: 4 }).totals).toEqual({ a: 1, b: 1 });
   });
 
   it('ends the match when a winner reaches the target', () => {
-    const tally = recordRound(recordRound(firstTo(2), ['a']), ['a']);
-    expect(tally.champions).toEqual(['a']);
+    expect(play(firstTo(2), { a: 1, b: 5 }, { a: 0, b: 5 }).champions).toEqual(['a']);
   });
 
   it('lets everyone who reaches the target in the same round win the match', () => {
-    const tally = recordRound(recordRound(firstTo(2), ['a', 'b']), ['a', 'b', 'c']);
-    expect(tally.champions).toEqual(['a', 'b']);
+    expect(play(firstTo(2), { a: 1, b: 1, c: 3 }, { a: 0, b: 0, c: 0 }).champions).toEqual(['a', 'b']);
   });
 
   it('treats a single round as first to 1', () => {
-    expect(recordRound(firstTo(1), ['a']).champions).toEqual(['a']);
+    expect(play(firstTo(1), { a: 1, b: 5 }).champions).toEqual(['a']);
   });
 
-  it('gives the round to every lowest hand', () => {
+  it('adds up round scores in points mode, red kings included', () => {
+    const tally = play(toPoints(30), { a: 4, b: 9 }, { a: -1, b: 6 });
+    expect(tally.totals).toEqual({ a: 3, b: 15 });
+    expect(tally.champions).toEqual([]);
+  });
+
+  it('ends a points match once a total reaches the target, and the lowest total wins', () => {
+    const tally = play(toPoints(10), { a: 2, b: 6, c: 4 }, { a: 3, b: 4, c: 5 });
+    expect(tally.totals).toEqual({ a: 5, b: 10, c: 9 });
+    expect(tally.champions).toEqual(['a']);
+  });
+
+  it('shares a points match between the lowest totals when they tie at the end', () => {
+    expect(play(toPoints(10), { a: 4, b: 12, c: 4 }).champions).toEqual(['a', 'c']);
+  });
+
+  it('reads every player\'s round score from their hand', () => {
     const game = createGame([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }], { hardMode: false }, { random: () => 0.5, id: () => 'c' });
-    const hand = (rank: Rank): Card[] => [{ id: rank, rank, suit: 'S' }];
-    game.players[0].hand = hand('2');
+    const hand = (...ranks: Rank[]): Card[] => ranks.map((rank) => ({ id: rank, rank, suit: 'S' }));
+    game.players[0].hand = hand('2', '3');
     game.players[1].hand = hand('K');
-    expect(roundWinners(game)).toEqual(['a']);
-    game.players[1].hand = hand('2');
-    expect(roundWinners(game)).toEqual(['a', 'b']);
+    expect(roundScores(game)).toEqual({ a: 5, b: 13 });
   });
 
-  it('accepts first to 1 to 10 round wins and refuses anything else', () => {
+  it('accepts first to 1 to 10 round wins or 5 to 200 points, and refuses anything else', () => {
     expect(parseMatch({ mode: 'wins', target: 3 })).toEqual({ mode: 'wins', target: 3 });
-    for (const bad of [undefined, null, {}, { mode: 'points', target: 10 }, { mode: 'wins', target: 0 }, { mode: 'wins', target: 11 }, { mode: 'wins', target: 2.5 }, { mode: 'wins', target: '3' }])
-      expect(() => parseMatch(bad)).toThrow(RuleError);
+    expect(parseMatch({ mode: 'points', target: 30 })).toEqual({ mode: 'points', target: 30 });
+    const bad = [undefined, null, {}, { mode: 'nope', target: 3 }, { mode: 'toString', target: 3 }, { mode: 'wins', target: 0 }, { mode: 'wins', target: 11 },
+      { mode: 'wins', target: 2.5 }, { mode: 'wins', target: '3' }, { mode: 'points', target: 4 }, { mode: 'points', target: 201 }, { mode: 'points', target: 'x' }];
+    for (const match of bad) expect(() => parseMatch(match)).toThrow(RuleError);
   });
 });

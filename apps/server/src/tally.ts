@@ -1,26 +1,38 @@
 import { RuleError, score, type GameState, type Match, type Tally } from '@swap/engine';
 
-export const MAX_TARGET_WINS = 10;
+/** Allowed targets per mode, inclusive. */
+const TARGETS = new Map<Match['mode'], [number, number]>([
+  ['wins', [1, 10]],
+  ['points', [5, 200]],
+]);
 
 /** Validates a client's match choice; anything else is refused. */
 export const parseMatch = (match: unknown): Match => {
   const { mode, target } = (match ?? {}) as Partial<Match>;
-  if (mode !== 'wins' || !Number.isInteger(target) || target! < 1 || target! > MAX_TARGET_WINS)
-    throw new RuleError(`Play first to 1 to ${MAX_TARGET_WINS} round wins`);
-  return { mode, target: target! };
+  const [min, max] = TARGETS.get(mode!) ?? [NaN, NaN];
+  if (!Number.isInteger(target) || !(target! >= min && target! <= max))
+    throw new RuleError('Play first to 1 to 10 round wins, or to 5 to 200 points');
+  return { mode: mode!, target: target! };
 };
 
-export const newTally = (match: Match): Tally => ({ match, wins: {}, champions: [] });
+export const newTally = (match: Match): Tally => ({ match, totals: {}, champions: [] });
 
-/** Everyone with the lowest hand wins the round (rule 8: shared win on ties). */
-export const roundWinners = (game: GameState) => {
-  const lowest = Math.min(...game.players.map(score));
-  return game.players.filter((p) => score(p) === lowest).map((p) => p.id);
+/** Each player's points for the round, by seat id: the one place a house rule (MODE-3's swish penalty) adds to. */
+export const roundScores = (game: GameState): Record<string, number> =>
+  Object.fromEntries(game.players.map((p) => [p.id, score(p)]));
+
+/** Everyone tied on the lowest number (rule 8: shared win on ties). */
+const lowest = (byId: Record<string, number>) => {
+  const min = Math.min(...Object.values(byId));
+  return Object.keys(byId).filter((id) => byId[id] === min);
 };
 
-/** Counts one finished round; every winner who reaches the target wins the match. */
-export const recordRound = (tally: Tally, winners: string[]): Tally => {
-  const wins = { ...tally.wins };
-  for (const id of winners) wins[id] = (wins[id] ?? 0) + 1;
-  return { ...tally, wins, champions: Object.keys(wins).filter((id) => wins[id] >= tally.match.target) };
+/** Counts one finished round and decides whether the match is over. */
+export const recordRound = ({ match, totals }: Tally, round: Record<string, number>): Tally => {
+  const gained = match.mode === 'wins' ? Object.fromEntries(lowest(round).map((id) => [id, 1])) : round;
+  const next = { ...totals };
+  for (const [id, n] of Object.entries(gained)) next[id] = (next[id] ?? 0) + n;
+  const reached = Object.keys(next).filter((id) => next[id] >= match.target);
+  const champions = match.mode === 'wins' ? reached : reached.length ? lowest(next) : [];
+  return { match, totals: next, champions };
 };

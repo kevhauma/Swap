@@ -244,7 +244,7 @@ export function Board({
   const won = (who: string[]) => `${who.join(' & ')} ${who.length > 1 || who[0] === 'You' ? 'win' : 'wins'}`;
   const winners = names(view.players.filter((p) => p.score === lowest));
   // A single round needs no scoreboard.
-  const match = tally && tally.match.target > 1 ? tally : null;
+  const match = tally && (tally.match.mode === 'points' || tally.match.target > 1) ? tally : null;
   const champions = names(view.players.filter((p) => match?.champions.includes(p.id)));
   const toggle = (kind: 'match' | 'takeOpen') =>
     setMode(mode.kind === kind ? { kind: 'idle' } : { kind });
@@ -355,12 +355,16 @@ export function Board({
 
         {ended && match && (
           <section aria-label="Scoreboard" className="mx-auto w-full max-w-xs text-center">
-            <h2 className="text-chalk/70">Round wins, first to {match.match.target}</h2>
+            <h2 className="text-chalk/70">
+              {match.match.mode === 'wins'
+                ? `Round wins, first to ${match.match.target}`
+                : `Points, ends at ${match.match.target}, lowest total wins`}
+            </h2>
             <ul>
               {view.players.map((p) => (
                 <li key={p.id} className="flex justify-between text-lg">
                   <span>{p === me ? 'You' : p.name}</span>
-                  <span>{match.wins[p.id] ?? 0}</span>
+                  <span>{match.totals[p.id] ?? 0}</span>
                 </li>
               ))}
             </ul>

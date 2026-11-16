@@ -148,14 +148,14 @@ describe('server rooms', () => {
     };
 
     const first = await playRound(2);
-    expect(first.tally.wins).toEqual(Object.fromEntries(first.winners.map((id) => [id, 1])));
+    expect(first.tally.totals).toEqual(Object.fromEntries(first.winners.map((id) => [id, 1])));
     expect(first.tally.champions).toEqual([]);
 
     // Mid-match the server keeps the match's mode, whatever the next start says.
     const second = await playRound(1);
     expect(second.tally.match.target).toBe(2);
-    for (const id of second.winners) expect(second.tally.wins[id]).toBe((first.tally.wins[id] ?? 0) + 1);
-    const champions = Object.keys(second.tally.wins).filter((id) => second.tally.wins[id] === 2);
+    for (const id of second.winners) expect(second.tally.totals[id]).toBe((first.tally.totals[id] ?? 0) + 1);
+    const champions = Object.keys(second.tally.totals).filter((id) => second.tally.totals[id] === 2);
     expect(second.tally.champions).toEqual(champions);
 
     // The fixed Ctx deals every round alike, so the same winners reach 2.
@@ -163,6 +163,6 @@ describe('server rooms', () => {
     alice.c.msgs.length = 0;
     alice.c.send({ type: 'start', hardMode: false, match: { mode: 'wins', target: 3 } });
     const fresh = await latest(alice.c, 'room', (m) => m.view?.phase === 'peek');
-    expect(fresh.tally).toEqual({ match: { mode: 'wins', target: 3 }, wins: {}, champions: [] });
+    expect(fresh.tally).toEqual({ match: { mode: 'wins', target: 3 }, totals: {}, champions: [] });
   });
 });

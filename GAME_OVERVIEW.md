@@ -83,7 +83,7 @@ These are the rules the engine implements.
 | 5 | Hard-mode 3: does swapping a 3 *out* of your hand count as "placing"? | Yes, any discard except a match |
 | 6 | When can you call swish-swish? | Instead of taking your turn; not before everyone had one turn |
 | 7 | Stack runs out | Reshuffle the discard pile, except the open card |
-| 8 | Ties, single round or match to N points? | Single round MVP, shared win on ties. Game modes: single round, or first to N round **wins** (how it is played now): a shared round win counts for every winner, and everyone who reaches N in the same round wins the match together. Later: add up points and play to a target (e.g. 10 or 30); who wins at the target is still open |
+| 8 | Ties, single round or match to N points? | Single round MVP, shared win on ties. Game modes: single round, or first to N round **wins** (how it is played now): a shared round win counts for every winner, and everyone who reaches N in the same round wins the match together. Or points to a target (decided 2026-11-16): round scores add up across rounds; once anyone's total reaches the target or more at the end of a round, the match ends and the player(s) with the **lowest** total win (ties shared) |
 | 9 | Penalty if the swish caller is *not* lowest? | None (as written); optional house rule later |
 | 10 | Does the UI remember peeked cards for you? | **No**: memory is the game. Show a peek for ~2 s, then flip back |
 
