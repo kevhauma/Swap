@@ -25,13 +25,21 @@ for about 2 seconds.
 
 ## Acceptance criteria
 
-- [ ] The highlight shows for ~2 s on the peeked card id(s) from the view, then stops.
-- [ ] Works for first peek, 7/8, 9/10 and both black-K looks.
-- [ ] The highlight is not colour-only (outline or motion too) and respects
-      `prefers-reduced-motion`.
-- [ ] `npm run check` passes.
+- [x] The highlight shows for ~2 s on the peeked card id(s) from the view, then stops.
+      (`apps/web/src/Board.tsx`: `peeked` state set when `view.lastPeek.cardIds` changes, cleared
+      by its own `PEEK_HIGHLIGHT_MS` = 2000 timer, so the next action clearing `lastPeek` does not
+      cut it short)
+- [x] Works for first peek, 7/8, 9/10 and both black-K looks. (the client keys on whatever ids
+      `lastPeek` names; engine tests `peek position (rule 3d)` cover each case setting them; for
+      the black K the second look changes the ids, so the highlight moves to the opponent's card
+      and its timer restarts)
+- [x] The highlight is not colour-only (outline or motion too) and respects
+      `prefers-reduced-motion`. (`apps/web/src/index.css` `.peeked`: dashed outline plus a
+      `scale` pulse; the pulse is turned off under `prefers-reduced-motion: reduce`, the outline
+      stays)
+- [x] `npm run check` passes. (tsc clean, 33 tests passed)
 - [ ] Verified live in the browser: in two tabs, a peek in one highlights the same card in the
-      other.
+      other. — not ticked: browser verification pending
 
 ## Notes
 

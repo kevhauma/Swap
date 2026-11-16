@@ -27,12 +27,15 @@ export function PlayingCard({
   onClick,
   size = 'md',
   selected = false,
+  peeked = false,
 }: {
   card: CardView;
   revealed?: Card;
   onClick?: () => void;
   size?: keyof typeof SIZES;
   selected?: boolean;
+  /** Someone just looked at this card; everyone sees where, only the peeker sees the face. */
+  peeked?: boolean;
 }) {
   const face = isFaceUp(card) ? card : revealed;
   // Keep the face mounted while flipping back, then drop it from the DOM.
@@ -49,7 +52,7 @@ export function PlayingCard({
       transition={{ type: 'spring', stiffness: 220, damping: 26 }}
       className={`relative aspect-[167/243] shrink-0 rounded-md shadow-[0_2px_2px_rgb(10_30_15/0.35),0_7px_9px_-2px_rgb(10_30_15/0.3)] perspective-midrange ${SIZES[size]} ${
         onClick ? 'chalk-loop' : ''
-      } ${selected ? '-translate-y-2 outline-3 outline-offset-2 outline-chalk' : ''}`}
+      } ${selected ? '-translate-y-2 outline-3 outline-offset-2 outline-chalk' : ''} ${peeked ? 'peeked' : ''}`}
     >
       <motion.div
         className="absolute inset-0 transform-3d"

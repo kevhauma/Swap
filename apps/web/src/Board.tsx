@@ -25,6 +25,7 @@ const POWER_LABEL = {
 };
 
 const button = 'wood';
+const PEEK_HIGHLIGHT_MS = 2000;
 
 /** Hand-drawn chalk loop around whoever's turn it is. */
 const ChalkLoop = () => (
@@ -73,6 +74,18 @@ export function Board({
 
   // Any change of turn, step or open card makes a half-made choice stale.
   useEffect(() => setMode({ kind: 'idle' }), [view.turn, step.kind, open?.id]);
+
+  // The next action clears lastPeek, so the highlight runs on its own timer, restarted per new peek.
+  const [peeked, setPeeked] = useState<string[]>([]);
+  const peekKey = view.lastPeek?.cardIds.join(' ');
+  useEffect(() => {
+    if (peekKey) setPeeked(peekKey.split(' '));
+  }, [peekKey]);
+  useEffect(() => {
+    if (!peeked.length) return;
+    const timer = setTimeout(() => setPeeked([]), PEEK_HIGHLIGHT_MS);
+    return () => clearTimeout(timer);
+  }, [peeked]);
 
   const canMatch = view.phase !== 'ended' && !me.locked && !!open;
 
@@ -169,6 +182,7 @@ export function Board({
             revealed={revealed[card.id]}
             size={size}
             onClick={onTap(card, player) ?? undefined}
+            peeked={peeked.includes(card.id)}
             selected={
               (mode.kind === 'blindOwn' && mode.own === card.id) ||
               (mode.kind === 'matchGive' && mode.target === card.id) ||
