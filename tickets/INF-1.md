@@ -35,3 +35,4 @@ Add one GitHub Actions workflow that runs `npm run check` on Node 24.
 ## Notes
 
 - Independent. Do it before the other P1 tickets so they get checked.
+- *2026-11-16: dropped at the user's request; the workflow was removed. Checks run locally with `npm run check`.*
