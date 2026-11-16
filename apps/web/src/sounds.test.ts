@@ -10,6 +10,7 @@ const ctx = { random: () => 0.5, id: () => `new${n++}` };
 const table = (extra: Partial<GameState> = {}): GameState => ({
   phase: 'turn',
   hardMode: false,
+  swishPenalty: false,
   players: [
     { id: 'a', name: 'A', hand: [card('5H'), card('7H')], locked: false, hasPeeked: true },
     { id: 'b', name: 'B', hand: [card('5S'), card('QS')], locked: false, hasPeeked: true },

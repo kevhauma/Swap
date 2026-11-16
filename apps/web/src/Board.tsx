@@ -243,6 +243,7 @@ export function Board({
   const names = (ps: PlayerView[]) => ps.map((p) => (p === me ? 'You' : p.name));
   const won = (who: string[]) => `${who.join(' & ')} ${who.length > 1 || who[0] === 'You' ? 'win' : 'wins'}`;
   const winners = names(view.players.filter((p) => p.score === lowest));
+  const penalised = view.players.find((p) => p.penalty);
   // A single round needs no scoreboard.
   const match = tally && (tally.match.mode === 'points' || tally.match.target > 1) ? tally : null;
   const champions = names(view.players.filter((p) => match?.champions.includes(p.id)));
@@ -350,6 +351,13 @@ export function Board({
         {ended && (
           <p className="text-center text-3xl font-bold text-turn">
             {won(winners)} with {lowest}
+          </p>
+        )}
+
+        {penalised && (
+          <p className="text-center text-lg">
+            {penalised === me ? 'You' : penalised.name} called swish-swish without the lowest score: +{penalised.penalty} points penalty
+            (included in {penalised === me ? 'your' : 'their'} {penalised.score})
           </p>
         )}
 

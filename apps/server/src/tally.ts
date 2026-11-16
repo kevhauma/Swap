@@ -1,4 +1,4 @@
-import { RuleError, score, type GameState, type Match, type Tally } from '@swap/engine';
+import { RuleError, roundScore, type GameState, type Match, type Tally } from '@swap/engine';
 
 /** Allowed targets per mode, inclusive. */
 const TARGETS = new Map<Match['mode'], [number, number]>([
@@ -17,9 +17,9 @@ export const parseMatch = (match: unknown): Match => {
 
 export const newTally = (match: Match): Tally => ({ match, totals: {}, champions: [] });
 
-/** Each player's points for the round, by seat id: the one place a house rule (MODE-3's swish penalty) adds to. */
+/** Each player's points for the round, by seat id, house-rule penalty included. */
 export const roundScores = (game: GameState): Record<string, number> =>
-  Object.fromEntries(game.players.map((p) => [p.id, score(p)]));
+  Object.fromEntries(game.players.map((p) => [p.id, roundScore(game, p)]));
 
 /** Everyone tied on the lowest number (rule 8: shared win on ties). */
 const lowest = (byId: Record<string, number>) => {

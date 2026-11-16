@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MAX_PLAYERS, type Match } from '@swap/engine';
+import { MAX_PLAYERS, SWISH_PENALTY, type Match } from '@swap/engine';
 import { Board } from './Board.tsx';
 import { unlockAudio } from './sounds.ts';
 import { hasToken, storage, useSwap } from './useSwap.ts';
@@ -25,6 +25,7 @@ export function App() {
   const [name, setName] = useState(() => storage.get(NAME_KEY) ?? '');
   const [code, setCode] = useState(urlRoom);
   const [hardMode, setHardMode] = useState(false);
+  const [swishPenalty, setSwishPenalty] = useState(false);
   const [preset, setPreset] = useState(0);
 
   const enter = (roomCode: string) => {
@@ -112,7 +113,7 @@ export function App() {
           revealed={revealed}
           tally={room.tally}
           act={act}
-          playAgain={() => send({ type: 'start', hardMode: view.hardMode, match: room.tally?.match ?? { mode: 'wins', target: 1 } })}
+          playAgain={() => send({ type: 'start', hardMode: view.hardMode, swishPenalty: view.swishPenalty, match: room.tally?.match ?? { mode: 'wins', target: 1 } })}
         />
         {toast}
       </>
@@ -143,6 +144,10 @@ export function App() {
         <input type="checkbox" checked={hardMode} onChange={(e) => setHardMode(e.target.checked)} />
         Hard mode (3s cost a card, 6s show the top of the stack)
       </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={swishPenalty} onChange={(e) => setSwishPenalty(e.target.checked)} />
+        Swish penalty (+{SWISH_PENALTY} points if the caller is not lowest)
+      </label>
       <label className="flex items-center justify-between gap-2 text-sm">
         Play
         <select className="rounded-lg bg-table-deep px-3 py-2" value={preset} onChange={(e) => setPreset(Number(e.target.value))}>
@@ -159,7 +164,7 @@ export function App() {
         </button>
         <button
           className={`${button} flex-1`}
-          onClick={() => send({ type: 'start', hardMode, match: MATCHES[preset][1] })}
+          onClick={() => send({ type: 'start', hardMode, swishPenalty, match: MATCHES[preset][1] })}
           disabled={room.seats.length < 2}
         >
           Start

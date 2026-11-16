@@ -31,6 +31,8 @@ export type Step =
 export interface GameState {
   phase: 'peek' | 'turn' | 'ended';
   hardMode: boolean;
+  /** House rule (row 9): the swish caller pays SWISH_PENALTY when not (shared) lowest. */
+  swishPenalty: boolean;
   players: Player[];
   /** Last element is the top. */
   stack: Card[];
@@ -82,7 +84,7 @@ const POWER_STEPS: Step['kind'][] = ['peekOwn', 'spy', 'blindSwap', 'openSwap'];
 
 export function createGame(
   players: { id: string; name: string }[],
-  options: { hardMode: boolean },
+  options: { hardMode: boolean; swishPenalty?: boolean },
   ctx: Ctx
 ): GameState {
   if (players.length < 2 || players.length > MAX_PLAYERS) fail(`Swap needs 2 to ${MAX_PLAYERS} players`);
@@ -90,6 +92,7 @@ export function createGame(
   return {
     phase: 'peek',
     hardMode: options.hardMode,
+    swishPenalty: options.swishPenalty === true,
     players: players.map((p) => ({
       id: p.id,
       name: p.name,
@@ -359,3 +362,13 @@ export function apply(
 
 export const score = (player: Player) =>
   player.hand.reduce((sum, card) => sum + points(card), 0);
+
+/** Points added to the swish caller's round score under the house rule (GAME_OVERVIEW.md row 9). */
+export const SWISH_PENALTY = 5;
+
+/** The house-rule penalty for this player: "lowest" is judged on card points, before any penalty. */
+export const swishPenaltyFor = (s: GameState, player: Player) =>
+  s.swishPenalty && s.swishBy === player.id && score(player) > Math.min(...s.players.map(score)) ? SWISH_PENALTY : 0;
+
+/** A player's score for the round: card points plus any house-rule penalty. */
+export const roundScore = (s: GameState, player: Player) => score(player) + swishPenaltyFor(s, player);

@@ -1,5 +1,5 @@
 import type { Card, CardView } from './cards.ts';
-import { score, type GameState } from './game.ts';
+import { roundScore, swishPenaltyFor, type GameState } from './game.ts';
 
 export interface PlayerView {
   id: string;
@@ -7,8 +7,10 @@ export interface PlayerView {
   locked: boolean;
   hasPeeked: boolean;
   cards: CardView[];
-  /** Only once the round has ended. */
+  /** Only once the round has ended; includes the penalty. */
   score?: number;
+  /** The swish penalty within `score`; only once the round has ended, and only when charged. */
+  penalty?: number;
 }
 
 export type StepView =
@@ -22,6 +24,7 @@ export interface GameView {
   you: string;
   phase: GameState['phase'];
   hardMode: boolean;
+  swishPenalty: boolean;
   players: PlayerView[];
   /** Whose turn it is; null during the opening peek. */
   turn: string | null;
@@ -54,13 +57,15 @@ export function viewFor(s: GameState, playerId: string): GameView {
     you: playerId,
     phase: s.phase,
     hardMode: s.hardMode,
+    swishPenalty: s.swishPenalty,
     players: s.players.map((p) => ({
       id: p.id,
       name: p.name,
       locked: p.locked,
       hasPeeked: p.hasPeeked,
       cards: p.hand.map((c) => (ended ? c : hide(c))),
-      score: ended ? score(p) : undefined,
+      score: ended ? roundScore(s, p) : undefined,
+      penalty: (ended && swishPenaltyFor(s, p)) || undefined,
     })),
     turn: s.phase === 'turn' ? s.players[s.turn].id : null,
     step:

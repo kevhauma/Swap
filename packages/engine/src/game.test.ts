@@ -46,6 +46,7 @@ const table = (
 ): GameState => ({
   phase: 'turn',
   hardMode: false,
+  swishPenalty: false,
   players: hands.map((h, i) => ({
     id: 'abc'[i],
     name: 'ABC'[i],
@@ -298,6 +299,33 @@ describe('swish-swish', () => {
 
   it('is not allowed before everyone had a turn', () => {
     expect(() => act(table([['AH'], ['9S']], '6D'), 'a', { type: 'swish' })).toThrow('one turn');
+  });
+});
+
+describe('swish penalty house rule (row 9)', () => {
+  /** a called swish-swish; the round is over. Scores and penalties as everyone sees them. */
+  const ended = (hands: string[][], swishPenalty = true) => {
+    const s = table(hands, '6D', [], { phase: 'ended', swishBy: 'a', swishPenalty });
+    return viewFor(s, 'b').players.map((p) => [p.score, p.penalty]);
+  };
+
+  it('is off unless chosen at the start', () => {
+    const players = [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }];
+    expect(createGame(players, { hardMode: false }, ctx).swishPenalty).toBe(false);
+    expect(createGame(players, { hardMode: false, swishPenalty: true }, ctx).swishPenalty).toBe(true);
+    expect(ended([['9H'], ['2S']], false)).toEqual([[9, undefined], [2, undefined]]);
+  });
+
+  it('charges nothing when the caller is lowest', () => {
+    expect(ended([['2H'], ['9S'], ['5C']])).toEqual([[2, undefined], [9, undefined], [5, undefined]]);
+  });
+
+  it('charges nothing when the caller is tied for lowest', () => {
+    expect(ended([['4H'], ['4S'], ['9C']])).toEqual([[4, undefined], [4, undefined], [9, undefined]]);
+  });
+
+  it('adds 5 to the caller when someone is lower, judged on card points before the penalty', () => {
+    expect(ended([['5H'], ['4S'], ['9C']])).toEqual([[10, 5], [4, undefined], [9, undefined]]);
   });
 });
 

@@ -190,7 +190,7 @@ const onConnection = (socket: WebSocket) => {
           // A match in progress keeps its mode; otherwise this round opens a new match.
           if (!room.tally || room.tally.champions.length) room.tally = newTally(parseMatch(msg.match));
           room.seats.forEach((s) => s.bot && (s.bot.memory = {}));
-          room.game = createGame(room.seats, { hardMode: msg.hardMode === true }, ctx);
+          room.game = createGame(room.seats, { hardMode: msg.hardMode === true, swishPenalty: msg.swishPenalty === true }, ctx);
           broadcast(room);
           break;
         case 'action':

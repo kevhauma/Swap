@@ -53,6 +53,15 @@ describe('match tally', () => {
     expect(roundScores(game)).toEqual({ a: 5, b: 13 });
   });
 
+  it('adds the swish penalty to the round score, so it counts in points totals', () => {
+    const game = createGame([{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }], { hardMode: false, swishPenalty: true }, { random: () => 0.5, id: () => 'c' });
+    game.players[0].hand = [{ id: '9', rank: '9', suit: 'S' }];
+    game.players[1].hand = [{ id: '2', rank: '2', suit: 'S' }];
+    game.swishBy = 'a';
+    expect(roundScores(game)).toEqual({ a: 14, b: 2 });
+    expect(recordRound(toPoints(30), roundScores(game)).totals).toEqual({ a: 14, b: 2 });
+  });
+
   it('accepts first to 1 to 10 round wins or 5 to 200 points, and refuses anything else', () => {
     expect(parseMatch({ mode: 'wins', target: 3 })).toEqual({ mode: 'wins', target: 3 });
     expect(parseMatch({ mode: 'points', target: 30 })).toEqual({ mode: 'points', target: 30 });

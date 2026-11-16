@@ -96,7 +96,7 @@ describe('server rooms', () => {
   it('rejects the second of two matches on one open card as too late, without penalty', async () => {
     const alice = await join('RACE', 'Alice');
     const bob = await join('RACE', 'Bob');
-    alice.c.send({ type: 'start', hardMode: false, match: { mode: 'wins', target: 1 } });
+    alice.c.send({ type: 'start', hardMode: false, swishPenalty: false, match: { mode: 'wins', target: 1 } });
     const { seats, view } = await latest(bob.c, 'room', (m) => m.view !== null);
     // The server's Ctx is fresh and deterministic, so the same deal can be rebuilt here.
     const deal = createGame(seats, { hardMode: false }, fixedCtx());
@@ -119,13 +119,13 @@ describe('server rooms', () => {
   it('keeps the round-win tally across rounds until the target, then starts a new match', async () => {
     const players = [await join('MATCH', 'Alice'), await join('MATCH', 'Bob')];
     const [alice] = players;
-    alice.c.send({ type: 'start', hardMode: true, match: { mode: 'nope', target: 2 } as never });
+    alice.c.send({ type: 'start', hardMode: true, swishPenalty: false, match: { mode: 'nope', target: 2 } as never });
     expect((await latest(alice.c, 'error')).message).toMatch(/round wins/);
 
     /** Starts a round; everyone peeks, takes the open card until all had a turn, then swishes. */
     const playRound = async (target: number) => {
       players.forEach(({ c }) => (c.msgs.length = 0));
-      alice.c.send({ type: 'start', hardMode: false, match: { mode: 'wins', target } });
+      alice.c.send({ type: 'start', hardMode: false, swishPenalty: false, match: { mode: 'wins', target } });
       const first = await latest(alice.c, 'room', (m) => m.view?.phase === 'peek');
       for (const { c } of players) {
         const { view } = await latest(c, 'room', (m) => m.view?.phase === 'peek');
@@ -161,7 +161,7 @@ describe('server rooms', () => {
     // The fixed Ctx deals every round alike, so the same winners reach 2.
     expect(champions).toEqual(first.winners);
     alice.c.msgs.length = 0;
-    alice.c.send({ type: 'start', hardMode: false, match: { mode: 'wins', target: 3 } });
+    alice.c.send({ type: 'start', hardMode: false, swishPenalty: false, match: { mode: 'wins', target: 3 } });
     const fresh = await latest(alice.c, 'room', (m) => m.view?.phase === 'peek');
     expect(fresh.tally).toEqual({ match: { mode: 'wins', target: 3 }, totals: {}, champions: [] });
   });

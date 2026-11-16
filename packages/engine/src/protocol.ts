@@ -6,7 +6,7 @@ import type { GameView } from './view.ts';
 export type ClientMessage =
   | { type: 'join'; room: string; name: string; token?: string }
   | { type: 'addBot' }
-  | { type: 'start'; hardMode: boolean; match: Match }
+  | { type: 'start'; hardMode: boolean; swishPenalty: boolean; match: Match }
   | { type: 'action'; action: Action };
 
 export interface Seat {
