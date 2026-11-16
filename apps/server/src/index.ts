@@ -41,7 +41,7 @@ const EMPTY_ROOM_TTL_MS = 10 * 60_000;
 const HEARTBEAT_MS = 30_000;
 const AWAY_AFTER_MS = 30_000;
 
-const ctx: Ctx = {
+let ctx: Ctx = {
   random: () => randomInt(2 ** 32) / 2 ** 32,
   id: () => randomUUID().slice(0, 8),
 };
@@ -141,9 +141,16 @@ const join = (socket: WebSocket, msg: Extract<ClientMessage, { type: 'join' }>):
   return [room, seat];
 };
 
-const wss = new WebSocketServer({ port: PORT, maxPayload: 4096 });
+const dispose = (room: Room) => {
+  clearTimeout(room.cleanup);
+  room.seats.forEach((s) => {
+    clearTimeout(s.bot?.timer);
+    clearTimeout(s.awayTimer);
+  });
+  rooms.delete(room.code);
+};
 
-wss.on('connection', (socket) => {
+const onConnection = (socket: WebSocket) => {
   let joined: [Room, Seat] | null = null;
   alive.add(socket);
   socket.on('pong', () => alive.add(socket));
@@ -198,25 +205,33 @@ wss.on('connection', (socket) => {
     seat.socket = null;
     broadcast(room);
     if (room.seats.every((s) => s.bot || !s.socket))
-      room.cleanup = setTimeout(() => {
-        room.seats.forEach((s) => {
-          clearTimeout(s.bot?.timer);
-          clearTimeout(s.awayTimer);
-        });
-        rooms.delete(room.code);
-      }, EMPTY_ROOM_TTL_MS);
+      room.cleanup = setTimeout(() => dispose(room), EMPTY_ROOM_TTL_MS);
   });
-});
+};
 
-// Mobile networks drop sockets silently; ping and terminate the ones that stop answering.
-setInterval(() => {
-  for (const socket of wss.clients) {
-    if (!alive.has(socket)) socket.terminate();
-    else {
-      alive.delete(socket);
-      socket.ping();
+/** Tests pass port 0 and a deterministic `Ctx`; closing the server clears every room and timer. */
+export const startServer = (port: number, testCtx?: Ctx) => {
+  if (testCtx) ctx = testCtx;
+  const wss = new WebSocketServer({ port, maxPayload: 4096 });
+  wss.on('connection', onConnection);
+  // Mobile networks drop sockets silently; ping and terminate the ones that stop answering.
+  const heartbeat = setInterval(() => {
+    for (const socket of wss.clients) {
+      if (!alive.has(socket)) socket.terminate();
+      else {
+        alive.delete(socket);
+        socket.ping();
+      }
     }
-  }
-}, HEARTBEAT_MS);
+  }, HEARTBEAT_MS);
+  wss.on('close', () => {
+    clearInterval(heartbeat);
+    rooms.forEach(dispose);
+  });
+  return wss;
+};
 
-console.log(`Swap server listening on ws://localhost:${PORT}`);
+if (import.meta.main) {
+  startServer(PORT);
+  console.log(`Swap server listening on ws://localhost:${PORT}`);
+}

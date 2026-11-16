@@ -5,7 +5,7 @@ A web version of the Swap card game. Rules, rule decisions and the stack: [GAME_
 ```
 npm install
 npm run dev     # game server on :3001 + web app on http://localhost:5173
-npm run check   # type check + engine tests
+npm run check   # type check + engine and server tests
 ```
 
 Open a room, share the invite link (or add bots), start. Two browser tabs are two players.

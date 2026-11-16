@@ -32,7 +32,7 @@ One file per ticket in [tickets/](tickets/).
 | [ENG-2](tickets/ENG-2.md) | P1 | Engine | Player count 2–6 vs 2–8 | open |
 | [ENG-3](tickets/ENG-3.md) | P1 | Engine | Show *which* card was peeked to everyone | done |
 | [SRV-1](tickets/SRV-1.md) | P1 | Server | An offline player stalls the game | open |
-| [SRV-2](tickets/SRV-2.md) | P2 | Server | Server integration test | open |
+| [SRV-2](tickets/SRV-2.md) | P2 | Server | Server integration test | done |
 | [BOT-1](tickets/BOT-1.md) | P2 | Bots | Bots match opponent cards | done |
 | [WEB-1](tickets/WEB-1.md) | P1 | Web client | Highlight the peeked slot for everyone | open |
 | [WEB-2](tickets/WEB-2.md) | P2 | Web client | Layout for 3–6 players on a phone | open |

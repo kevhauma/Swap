@@ -7,7 +7,7 @@
     "apps/*"
   ],
   "engines": {
-    "node": ">=24"
+    "node": ">=24.2"
   },
   "scripts": {
     "dev": "node scripts/dev.js",
