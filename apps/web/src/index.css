@@ -1,0 +1,224 @@
+@import 'tailwindcss';
+
+/* Kitchen table: green felt in a wooden rim, chalk marks, wooden tiles, a poker chip. */
+@theme {
+  --color-table: #2f6a45;
+  --color-table-deep: #24543a;
+  --color-slot: #e9e0c4;
+  --color-turn: #f0b543;
+  --color-chalk: #f6eed6;
+  --color-wood: #b7834c;
+  --color-wood-dark: #7a4f2a;
+  --color-rim: #8a5a36;
+  --color-chip: #c13f33;
+  --font-hand: 'Kalam', cursive;
+}
+
+:root {
+  color-scheme: dark;
+  /* Wood shows past the edges of the board, e.g. on overscroll. */
+  background: var(--color-rim);
+}
+
+body {
+  @apply bg-table text-chalk antialiased;
+  font-family: var(--font-hand);
+}
+
+::selection {
+  background: var(--color-chalk);
+  color: var(--color-table-deep);
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--color-chalk);
+  outline-offset: 3px;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* The chosen design (App sets --card-back); everyone sees their own pick, so it reveals nothing. */
+.card-back {
+  background: var(--card-back, url(/cards/back.svg)) center / 100% 100%;
+}
+button:disabled {
+  cursor: default;
+}
+
+/* The playing mat: felt with fibre noise and a stitched edge, inset in the wooden rim. */
+.felt {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--color-table);
+  border-radius: 18px;
+}
+.felt::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  outline: 2px dashed rgb(255 248 225 / 0.28);
+  outline-offset: -7px;
+}
+
+/* Hands lie slightly crooked, like dealt cards. */
+.fan > :nth-child(4n + 1) { rotate: -4deg; }
+.fan > :nth-child(4n + 2) { rotate: -1deg; }
+.fan > :nth-child(4n + 3) { rotate: 2deg; }
+.fan > :nth-child(4n + 4) { rotate: 5deg; }
+
+/* A tappable card gets a chalk loop drawn around it. */
+.chalk-loop::after {
+  content: '';
+  position: absolute;
+  inset: -7px -8px;
+  border: 2.5px solid var(--color-chalk);
+  border-radius: 50% 45% 52% 48%;
+  rotate: -4deg;
+  opacity: 0.8;
+  pointer-events: none;
+}
+.chalk-loop:hover::after {
+  opacity: 1;
+}
+
+/* A card someone just looked at: dashed outline plus a pulse, so it is not colour-only. */
+.peeked {
+  outline: 3px dashed var(--color-turn);
+  outline-offset: 3px;
+  animation: peek-pulse 0.5s ease-in-out 4 alternate;
+}
+@keyframes peek-pulse {
+  to {
+    scale: 1.12;
+  }
+}
+
+/* Name plate: avatar and name on a patch of darker felt. */
+.plate {
+  position: relative;
+  display: flex;
+  padding: 0 6px 0 3px;
+  border-radius: 10px;
+  background: rgb(20 50 32 / 0.45);
+}
+
+/* Avatar: a small poker chip in the seat's hue, initials on it. */
+.avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: radial-gradient(circle closest-side, hsl(var(--hue) 42% 32%) 0 76%, transparent 79%),
+    repeating-conic-gradient(hsl(var(--hue) 42% 32%) 0 36deg, var(--color-chalk) 36deg 45deg);
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.3);
+}
+
+/* Whose turn: chalk loop round the plate (shape) plus a bobbing chip (motion), never colour alone. */
+.their-turn .avatar {
+  animation: turn-bob 0.7s ease-in-out infinite alternate;
+}
+@keyframes turn-bob {
+  to {
+    translate: 0 -3px;
+    rotate: -8deg;
+  }
+}
+
+/* The discard pile was just shuffled into the stack: a quick riffle. */
+.reshuffled {
+  animation: riffle 0.6s ease-in-out;
+}
+@keyframes riffle {
+  20% { translate: -6px 0; rotate: -8deg; }
+  45% { translate: 6px 0; rotate: 7deg; }
+  70% { translate: -3px 0; rotate: -3deg; }
+}
+
+.wood {
+  border-radius: 6px;
+  padding: 9px 14px 7px;
+  font-weight: 700;
+  line-height: 1;
+  color: #3a2210;
+  background-color: var(--color-wood);
+  background-image: repeating-linear-gradient(92deg, transparent 0 9px, rgb(90 55 25 / 0.18) 9px 10px, transparent 10px 23px, rgb(255 230 190 / 0.12) 23px 25px);
+  box-shadow: inset 0 1.5px 0 rgb(255 235 200 / 0.45), inset 0 -2px 0 var(--color-wood-dark), 0 3px 4px rgb(0 0 0 / 0.3), 0 8px 12px -6px rgb(0 0 0 / 0.35);
+  text-shadow: 0 1px 0 rgb(255 235 200 / 0.4);
+  transition: translate 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+.wood:not(:disabled):hover {
+  translate: 0 -2px;
+}
+.wood:not(:disabled):active,
+.wood[aria-pressed='true'] {
+  translate: 0 1px;
+  box-shadow: inset 0 1.5px 0 rgb(255 235 200 / 0.45), inset 0 -1px 0 var(--color-wood-dark), 0 1px 2px rgb(0 0 0 / 0.3), 0 0 0 2.5px var(--color-chalk);
+}
+.wood:disabled {
+  opacity: 0.45;
+}
+
+.chip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  background: repeating-conic-gradient(var(--color-chip) 0 22deg, var(--color-chalk) 22deg 30deg);
+  box-shadow: 0 3px 0 #8e2a22, 0 6px 10px rgb(0 0 0 / 0.35);
+  transition: rotate 0.4s cubic-bezier(0.16, 1, 0.3, 1), translate 0.15s, opacity 0.15s;
+}
+.chip::before {
+  content: '';
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: var(--color-chip);
+  border: 2px dashed rgb(246 238 214 / 0.7);
+}
+.chip > span {
+  position: relative;
+  transition: rotate 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.chip:not(:disabled):hover {
+  rotate: 30deg;
+  translate: 0 -2px;
+}
+.chip:not(:disabled):hover > span {
+  rotate: -30deg;
+}
+.chip:disabled {
+  opacity: 0.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip,
+  .chip > span,
+  .wood {
+    transition: none;
+  }
+  .peeked,
+  .reshuffled,
+  .their-turn .avatar {
+    animation: none;
+  }
+}

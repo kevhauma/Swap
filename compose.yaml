@@ -1,0 +1,9 @@
+services:
+  server:
+    build: { context: ., target: server }
+    restart: unless-stopped
+  web:
+    build: { context: ., target: web }
+    ports: ['${PORT:-8080}:80']
+    depends_on: [server]
+    restart: unless-stopped
