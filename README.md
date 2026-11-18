@@ -16,6 +16,8 @@ Open a room, share the invite link (or add bots), start. Two browser tabs are tw
 | `apps/server` | Plain WebSocket server (`ws`): rooms, reconnect by token, bots, heartbeat |
 | `apps/web` | React + Motion + Tailwind client |
 
+Deploying on a plain server (git pull, npm ci, npm run build, npm start): [DEPLOY.md](DEPLOY.md).
+
 ## Self-hosting
 
 ```
