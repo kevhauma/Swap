@@ -38,6 +38,11 @@ body {
 button {
   cursor: pointer;
 }
+
+/* The chosen design (App sets --card-back); everyone sees their own pick, so it reveals nothing. */
+.card-back {
+  background: var(--card-back, url(/cards/back.svg)) center / 100% 100%;
+}
 button:disabled {
   cursor: default;
 }

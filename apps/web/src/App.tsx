@@ -15,6 +15,23 @@ const MATCHES: [label: string, match: Match][] = [
   ...[10, 30, 50].map((n): [string, Match] => [`Points to ${n}, lowest total wins`, { mode: 'points', target: n }]),
 ];
 
+/** Card back designs in `public/cards/`; the pick is per device, cosmetic only. */
+const BACKS = [
+  ['back', 'Classic'],
+  ['back-lattice', 'Lattice'],
+  ['back-stripes', 'Stripes'],
+  ['back-chip', 'Chip'],
+] as const;
+const BACK_KEY = 'swap:back';
+const savedBack = () => {
+  try {
+    const saved = localStorage.getItem(BACK_KEY);
+    return BACKS.find(([id]) => id === saved)?.[0] ?? BACKS[0][0];
+  } catch {
+    return BACKS[0][0];
+  }
+};
+
 const input =
   'w-full rounded-lg bg-table-deep px-4 py-3 text-white placeholder:text-slot/60 outline-none focus:ring-2 focus:ring-turn';
 const button =
@@ -28,6 +45,14 @@ export function App() {
   const [swishPenalty, setSwishPenalty] = useState(false);
   const [preset, setPreset] = useState(0);
   const [ranks, setRanks] = useState(ALL_RANKS);
+  const [back, setBack] = useState(savedBack);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--card-back', `url(/cards/${back}.svg)`);
+    try {
+      localStorage.setItem(BACK_KEY, back);
+    } catch {}
+  }, [back]);
 
   const enter = (roomCode: string) => {
     storage.set(NAME_KEY, name.trim());
@@ -81,6 +106,22 @@ export function App() {
               onChange={(e) => setCode(e.target.value.toUpperCase())}
             />
           </label>
+          <fieldset className="text-sm">
+            <legend className="mb-1">Card back</legend>
+            <div className="grid grid-cols-4 gap-2">
+              {BACKS.map(([id, label]) => (
+                <label key={id} className="flex cursor-pointer flex-col items-center gap-1">
+                  <input type="radio" name="back" className="peer sr-only" checked={back === id} onChange={() => setBack(id)} />
+                  <img
+                    src={`/cards/${id}.svg`}
+                    alt=""
+                    className="aspect-[167/243] w-full rounded-md opacity-60 peer-checked:opacity-100 peer-checked:outline-3 peer-checked:outline-offset-2 peer-checked:outline-turn peer-focus-visible:ring-2 peer-focus-visible:ring-chalk"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
           <div className="flex gap-2">
             <button className={`${button} flex-1`} disabled={!name.trim() || code.length < 3}>
               Join room

@@ -67,7 +67,7 @@ export function PlayingCard({
         transition={{ duration: 0.45 }}
         onAnimationComplete={() => !face && setShown(undefined)}
       >
-        <img src="/cards/back.svg" alt="" className="absolute inset-0 size-full backface-hidden" />
+        <div className="card-back absolute inset-0 size-full backface-hidden" />
         <div className="absolute inset-0 rotate-y-180 backface-hidden">{shown && <Face card={shown} />}</div>
       </motion.div>
     </motion.button>
