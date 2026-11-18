@@ -9,8 +9,8 @@ Needs Node 24.2 or newer and git. Prefer containers? See "Self-hosting" in the
 ## First time
 
 ```
-git clone https://github.com/kevhauma/Swap.git swap
-cd swap
+git clone https://github.com/kevhauma/Swap.git /opt/swap
+cd /opt/swap
 ```
 
 Then do the steps below, and set up the web server once (see the end).
@@ -24,28 +24,21 @@ npm run build    # web client → apps/web/dist
 npm start        # game server on :3001 (PORT env to change)
 ```
 
-Stop the old `npm start` first (Ctrl+C), or restart the service if you set one up.
+Stop the old `npm start` first (Ctrl+C), or use the service below.
 
-## Keep the server running (optional)
+## Run it as a Linux service
 
-`/etc/systemd/system/swap.service`:
+[deploy/swap.service](deploy/swap.service) is a systemd unit. It assumes the clone is in
+`/opt/swap`; set `User=` to the account that owns the clone (default `swap`). Once:
 
 ```
-[Unit]
-Description=Swap game server
-After=network.target
-
-[Service]
-WorkingDirectory=/path/to/swap
-ExecStart=/usr/bin/npm start
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
+sudo cp deploy/swap.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now swap
 ```
 
-`sudo systemctl enable --now swap` once; after each deploy replace `npm start` with
-`sudo systemctl restart swap`.
+After that, every deploy ends with `sudo systemctl restart swap` instead of `npm start`.
+Logs: `journalctl -u swap -f`.
 
 ## Web server
 
@@ -54,7 +47,7 @@ Serve `apps/web/dist` and pass `/ws` to the game server. nginx example:
 ```
 server {
   listen 80;
-  root /path/to/swap/apps/web/dist;
+  root /opt/swap/apps/web/dist;
 
   location /ws {
     proxy_pass http://127.0.0.1:3001;

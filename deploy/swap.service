@@ -1,0 +1,17 @@
+# systemd unit for the Swap game server. Install: see DEPLOY.md.
+# Edit User and WorkingDirectory to match your server.
+[Unit]
+Description=Swap game server
+After=network.target
+
+[Service]
+User=swap
+WorkingDirectory=/opt/swap
+Environment=PORT=3001
+# node directly, not npm start, so stop/restart signals reach the server. Needs node on PATH (/usr/bin or /usr/local/bin).
+ExecStart=/usr/bin/env node apps/server/src/index.ts
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
