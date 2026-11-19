@@ -25,17 +25,14 @@ docker compose up -d --build   # http://<host>:8080
 docker compose down            # stop (rooms live in memory, so running games end)
 ```
 
-Two containers: `server` (the WebSocket server, `npm start`) and `web` (nginx serving the built
-client and proxying `/ws` to `server`). Only `web` is published.
+One container: the Node server serves the built client and the game (`/ws`) on one port.
 
 | Env var | Default | What |
 |---|---|---|
-| `PORT` | `8080` | Host port for `web` (set it in the shell or a `.env` file next to `compose.yaml`) |
+| `PORT` | `8080` | Host port (set it in the shell or a `.env` file next to `compose.yaml`) |
 
 TLS is not included: put your own reverse proxy (Caddy, Traefik, nginx…) in front for `https://`,
 and let it pass WebSocket upgrades on `/ws`. The client connects to `wss://<same host>/ws` on its
 own.
 
-Split hosting instead: `npm run build` produces `apps/web/dist` for any static host; build it with
-`VITE_WS_URL=wss://your-server` and run `npm start` (`PORT` env, default 3001) on a
-WebSocket-friendly host.
+Client on a different host instead: build it with `VITE_WS_URL=wss://your-server/ws`.

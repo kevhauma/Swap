@@ -1,5 +1,8 @@
 import { once } from 'node:events';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
+import { tmpdir } from 'node:os';
+import { basename, join as path } from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createGame, type ClientMessage, type Ctx, type ServerMessage } from '@swap/engine';
 import { startServer } from './index.ts';
@@ -18,17 +21,26 @@ const fixedCtx = (): Ctx => {
   return { random: () => 0.5, id: () => `c${n++}` };
 };
 
+// A stand-in for apps/web/dist, plus a sibling file outside it that must never be served.
+const web = mkdtempSync(path(tmpdir(), 'swap-web-'));
+mkdirSync(path(web, 'assets'));
+writeFileSync(path(web, 'index.html'), '<h1>Swap</h1>');
+writeFileSync(path(web, 'assets', 'app-1a2b.js'), 'ok');
+writeFileSync(`${web}-secret.txt`, 'secret');
+
 const clients: Client[] = [];
 let server: ReturnType<typeof startServer>;
 let url = '';
+let http = '';
 let timersBefore = 0;
 const timers = () => process.getActiveResourcesInfo().filter((r) => r === 'Timeout').length;
 
 beforeAll(async () => {
   timersBefore = timers();
-  server = startServer(0, fixedCtx());
+  server = startServer(0, fixedCtx(), web);
   await once(server, 'listening');
-  url = `ws://localhost:${(server.address() as AddressInfo).port}`;
+  http = `http://localhost:${(server.address() as AddressInfo).port}`;
+  url = `${http.replace('http', 'ws')}/ws`;
 });
 afterEach(() =>
   Promise.all(
@@ -175,5 +187,28 @@ describe('server rooms', () => {
     const { view, tally } = await latest(alice.c, 'room', (m) => m.view !== null);
     expect(view!.ranks).toEqual(['A', 'K', 'JOKER']);
     expect(tally!.match.target).toBe(3);
+  });
+});
+
+describe('web client on the same port', () => {
+  it('serves the page and its hashed assets', async () => {
+    const page = await fetch(`${http}/`);
+    expect(page.status).toBe(200);
+    expect(page.headers.get('content-type')).toMatch(/^text\/html/);
+    expect(await page.text()).toBe('<h1>Swap</h1>');
+    const asset = await fetch(`${http}/assets/app-1a2b.js`);
+    expect(asset.headers.get('content-type')).toMatch(/^text\/javascript/);
+    expect(asset.headers.get('cache-control')).toContain('immutable');
+  });
+
+  it('never serves a file outside the web root', async () => {
+    const secret = `${basename(web)}-secret.txt`;
+    for (const path of [`/../${secret}`, `/..%2F${secret}`, `/%2E%2E%2F${secret}`, `/%2F..%2F${secret}`, '/missing.js'])
+      expect((await fetch(http + path)).status, path).toBe(404);
+    expect((await fetch(`${http}/%E0%A4%A`)).status).toBe(400);
+  });
+
+  it('accepts only GET and HEAD', async () => {
+    expect((await fetch(`${http}/`, { method: 'POST' })).status).toBe(405);
   });
 });

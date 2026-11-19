@@ -124,7 +124,7 @@ These are the rules the engine implements.
 | Styling | Tailwind CSS | Fast to match the mocks |
 | Bots | Heuristic bot in `packages/engine` (remembers what it peeked, swaps high for low, calls swish below a threshold) | Single-player mode and fills empty seats |
 | Persistence | **None for MVP** (no accounts; room code + nickname). Add Redis only for multi-instance or crash recovery | Nothing to store yet |
-| Hosting | Self-hosted with Docker Compose: nginx serves the client and proxies `/ws` to one Node server; TLS from your own reverse proxy (README "Self-hosting") | One port, no third-party accounts |
+| Hosting | Self-hosted: one Node process serves the built client and the game (`/ws`) on one port (plain `npm start` or Docker Compose); TLS from your own reverse proxy (README "Self-hosting") | One port, no third-party accounts |
 
 ### How hidden info flows
 

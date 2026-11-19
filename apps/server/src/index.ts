@@ -1,4 +1,6 @@
 import { randomInt, randomUUID } from 'node:crypto';
+import { createServer } from 'node:http';
+import { fileURLToPath } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
 import {
   apply,
@@ -17,6 +19,7 @@ import {
   type ServerMessage,
   type Tally,
 } from '@swap/engine';
+import { staticFiles } from './static.ts';
 import { newTally, parseMatch, recordRound, roundScores } from './tally.ts';
 
 interface Seat {
@@ -220,10 +223,16 @@ const onConnection = (socket: WebSocket) => {
   });
 };
 
-/** Tests pass port 0 and a deterministic `Ctx`; closing the server clears every room and timer. */
-export const startServer = (port: number, testCtx?: Ctx) => {
+const WEB_DIST = fileURLToPath(new URL('../../web/dist', import.meta.url));
+
+/**
+ * One port for everything: the built web client over HTTP, the game on `/ws`.
+ * Tests pass port 0, a deterministic `Ctx` and their own web root; closing clears every room and timer.
+ */
+export const startServer = (port: number, testCtx?: Ctx, webRoot = WEB_DIST) => {
   if (testCtx) ctx = testCtx;
-  const wss = new WebSocketServer({ port, maxPayload: 4096 });
+  const http = createServer(staticFiles(webRoot));
+  const wss = new WebSocketServer({ server: http, path: '/ws', maxPayload: 4096 });
   wss.on('connection', onConnection);
   // Mobile networks drop sockets silently; ping and terminate the ones that stop answering.
   const heartbeat = setInterval(() => {
@@ -238,11 +247,13 @@ export const startServer = (port: number, testCtx?: Ctx) => {
   wss.on('close', () => {
     clearInterval(heartbeat);
     rooms.forEach(dispose);
+    http.close();
   });
+  http.listen(port);
   return wss;
 };
 
 if (import.meta.main) {
   startServer(PORT);
-  console.log(`Swap server listening on ws://localhost:${PORT}`);
+  console.log(`Swap running on http://localhost:${PORT}`);
 }
