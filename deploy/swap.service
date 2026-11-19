@@ -1,5 +1,5 @@
 # systemd unit for the Swap game server. Install: see DEPLOY.md.
-# Edit User and WorkingDirectory to match your server.
+# Edit WorkingDirectory to match your server; create the user first (see DEPLOY.md).
 [Unit]
 Description=Swap game server
 After=network.target

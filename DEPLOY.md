@@ -29,16 +29,18 @@ Stop the old `npm start` first (Ctrl+C), or use the service below.
 ## Run it as a Linux service
 
 [deploy/swap.service](deploy/swap.service) is a systemd unit. It assumes the clone is in
-`/opt/swap`; set `User=` to the account that owns the clone (default `swap`). Once:
+`/opt/swap` and runs as a `swap` user that only needs to read it. Once:
 
 ```
+sudo useradd --system --no-create-home --shell /usr/sbin/nologin swap   # skip if User= is an existing account
 sudo cp deploy/swap.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now swap
 ```
 
 After that, every deploy ends with `sudo systemctl restart swap` instead of `npm start`.
-Logs: `journalctl -u swap -f`.
+Logs: `journalctl -u swap -f`. `status=217/USER` there means the `User=` account does not exist.
+The service needs `node` in `/usr/bin` or `/usr/local/bin` (not an nvm install under `/root`).
 
 ## HTTPS
 
