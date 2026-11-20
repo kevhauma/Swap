@@ -178,7 +178,13 @@ export function App() {
               {seat.name}
               {seat.id === room.playerId && ' (you)'}
             </span>
-            <span className="text-sm text-slot">{seat.bot ? 'bot' : seat.away ? 'away (bot playing)' : seat.online ? 'ready' : 'offline'}</span>
+            {seat.bot ? (
+              <button className="text-sm text-slot hover:text-white" aria-label={`Remove ${seat.name}`} onClick={() => send({ type: 'removeBot', seatId: seat.id })}>
+                bot ✕
+              </button>
+            ) : (
+              <span className="text-sm text-slot">{seat.away ? 'away (bot playing)' : seat.online ? 'ready' : 'offline'}</span>
+            )}
           </li>
         ))}
       </ul>

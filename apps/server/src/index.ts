@@ -43,7 +43,8 @@ interface Room {
 }
 
 const PORT = Number(process.env.PORT ?? 3001);
-const BOT_DELAY_MS = 1200;
+// Slow enough to follow where a bot's cards go.
+const BOT_DELAY_MS = 2200;
 const EMPTY_ROOM_TTL_MS = 10 * 60_000;
 const HEARTBEAT_MS = 30_000;
 const AWAY_AFTER_MS = 30_000;
@@ -178,9 +179,11 @@ const onConnection = (socket: WebSocket) => {
         case 'addBot':
           if (room.game && room.game.phase !== 'ended') throw new RuleError('The game is running');
           if (room.seats.length >= MAX_PLAYERS) throw new RuleError('The room is full');
+          let n = 1;
+          while (room.seats.some((s) => s.name === `Bot ${n}`)) n++;
           room.seats.push({
             id: randomUUID().slice(0, 8),
-            name: `Bot ${room.seats.filter((s) => s.bot && !s.away).length + 1}`,
+            name: `Bot ${n}`,
             token: randomUUID(),
             socket: null,
             bot: { memory: {} },
@@ -188,6 +191,15 @@ const onConnection = (socket: WebSocket) => {
           });
           broadcast(room);
           break;
+        case 'removeBot': {
+          if (room.game) throw new RuleError('Bots can only be removed before the first game');
+          const index = room.seats.findIndex((s) => s.id === msg.seatId && s.bot && !s.away);
+          if (index < 0) throw new RuleError('No such bot');
+          clearTimeout(room.seats[index].bot!.timer);
+          room.seats.splice(index, 1);
+          broadcast(room);
+          break;
+        }
         case 'start': {
           if (room.game && room.game.phase !== 'ended') throw new RuleError('The game is running');
           // First, so a rejected deck (unknown ranks, too few cards) leaves the room untouched.

@@ -25,27 +25,27 @@ export function soundFor(prev: GameView | null, next: GameView | null): Sound | 
   return null;
 }
 
-/** Each tone: oscillator type, start and end frequency (Hz), delay and length (s). */
-type Tone = [type: OscillatorType, from: number, to: number, delay: number, length: number];
+/** One layer of a sound: band-passed noise (a card's swish) or a soft tone, sweeping `from` → `to` Hz. */
+interface Part {
+  source: 'noise' | OscillatorType;
+  from: number;
+  to: number;
+  delay: number;
+  length: number;
+  volume: number;
+}
+const swish = (delay: number, length: number, from: number, to: number, volume = 0.5): Part => ({ source: 'noise', from, to, delay, length, volume });
+const tone = (wave: OscillatorType, from: number, to: number, delay: number, length: number, volume = 0.12): Part => ({ source: wave, from, to, delay, length, volume });
+
 // Synthesized, so no audio files ship: nothing to download or license.
-const TONES: Record<Sound, Tone[]> = {
-  draw: [['triangle', 320, 640, 0, 0.09]],
-  flip: [['square', 1400, 700, 0, 0.035]],
-  swap: [
-    ['triangle', 420, 760, 0, 0.08],
-    ['triangle', 760, 420, 0.09, 0.08],
-  ],
-  match: [
-    ['sine', 660, 660, 0, 0.12],
-    ['sine', 990, 990, 0.1, 0.2],
-  ],
-  wrong: [['sawtooth', 220, 110, 0, 0.32]],
-  swish: [
-    ['triangle', 1600, 300, 0, 0.13],
-    ['triangle', 1600, 300, 0.17, 0.13],
-  ],
+const SOUNDS: Record<Sound, Part[]> = {
+  draw: [swish(0, 0.16, 1200, 3200)],
+  flip: [swish(0, 0.05, 3000, 5000, 0.35)],
+  swap: [swish(0, 0.14, 3000, 1200), swish(0.16, 0.14, 1200, 3000)],
+  match: [tone('sine', 784, 784, 0, 0.3), tone('sine', 1175, 1175, 0.09, 0.45)],
+  wrong: [tone('triangle', 220, 180, 0, 0.22, 0.16), tone('triangle', 165, 130, 0.14, 0.4, 0.16)],
+  swish: [swish(0, 0.3, 4000, 500, 0.6), swish(0.3, 0.3, 4000, 500, 0.6)],
 };
-const VOLUME = 0.15;
 
 // Created on the first click or key press only: browsers block audio before a user gesture.
 let ctx: AudioContext | undefined;
@@ -73,19 +73,37 @@ export const setMuted = (value: boolean) => {
   } catch {}
 };
 
+let noise: AudioBuffer | undefined;
+
 export function play(sound: Sound | null) {
   if (!sound || !ctx || isMuted()) return;
-  for (const [type, from, to, delay, length] of TONES[sound]) {
+  noise ??= whiteNoise(ctx);
+  for (const { source, from, to, delay, length, volume } of SOUNDS[sound]) {
     const start = ctx.currentTime + delay;
     const end = start + length;
-    const osc = new OscillatorNode(ctx, { type, frequency: from });
-    const gain = new GainNode(ctx, { gain: VOLUME });
-    osc.frequency.setValueAtTime(from, start);
-    osc.frequency.exponentialRampToValueAtTime(to, end);
-    gain.gain.setValueAtTime(VOLUME, start);
+    // A few ms of attack and an exponential tail: no click at either end.
+    const gain = new GainNode(ctx, { gain: 0 });
+    gain.gain.setValueAtTime(0, start);
+    gain.gain.linearRampToValueAtTime(volume, start + 0.008);
     gain.gain.exponentialRampToValueAtTime(0.001, end);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(start);
-    osc.stop(end);
+    gain.connect(ctx.destination);
+    const node =
+      source === 'noise'
+        ? new AudioBufferSourceNode(ctx, { buffer: noise })
+        : new OscillatorNode(ctx, { type: source, frequency: from });
+    const sweep = source === 'noise' ? new BiquadFilterNode(ctx, { type: 'bandpass', Q: 1.4 }) : null;
+    const frequency = sweep ? sweep.frequency : (node as OscillatorNode).frequency;
+    frequency.setValueAtTime(from, start);
+    frequency.exponentialRampToValueAtTime(to, end);
+    if (sweep) node.connect(sweep).connect(gain);
+    else node.connect(gain);
+    node.start(start);
+    node.stop(end + 0.02);
   }
 }
+
+const whiteNoise = (audio: AudioContext) => {
+  const buffer = new AudioBuffer({ length: audio.sampleRate / 2, sampleRate: audio.sampleRate });
+  buffer.getChannelData(0).forEach((_, i, data) => (data[i] = Math.random() * 2 - 1));
+  return buffer;
+};

@@ -52,19 +52,20 @@ export function PlayingCard({
       disabled={!onClick}
       onClick={onClick}
       aria-label={face ? cardName(face) : 'Face-down card'}
-      transition={{ type: 'spring', stiffness: 220, damping: 26 }}
+      // Unhurried, so you can follow where a card goes.
+      transition={{ type: 'spring', duration: 0.9, bounce: 0.15 }}
       style={{ zIndex }}
       onLayoutAnimationStart={() => zIndex.set(1)}
       onLayoutAnimationComplete={() => zIndex.set(0)}
       className={`relative aspect-[167/243] shrink-0 rounded-md shadow-[0_2px_2px_rgb(10_30_15/0.35),0_7px_9px_-2px_rgb(10_30_15/0.3)] perspective-midrange ${SIZES[size]} ${
-        onClick ? 'chalk-loop' : ''
+        onClick ? 'tappable' : ''
       } ${selected ? '-translate-y-2 outline-3 outline-offset-2 outline-chalk' : ''} ${peeked ? 'peeked' : ''}`}
     >
       <motion.div
         className="absolute inset-0 transform-3d"
         initial={false}
         animate={{ rotateY: face ? 180 : 0 }}
-        transition={{ duration: 0.45 }}
+        transition={{ duration: 0.6 }}
         onAnimationComplete={() => !face && setShown(undefined)}
       >
         <div className="card-back absolute inset-0 size-full backface-hidden" />

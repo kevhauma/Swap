@@ -6,6 +6,7 @@ import type { GameView } from './view.ts';
 export type ClientMessage =
   | { type: 'join'; room: string; name: string; token?: string }
   | { type: 'addBot' }
+  | { type: 'removeBot'; seatId: string }
   /** `ranks`: the custom deck; omitted means the full deck. */
   | { type: 'start'; hardMode: boolean; swishPenalty: boolean; match: Match; ranks?: Rank[] }
   | { type: 'action'; action: Action };

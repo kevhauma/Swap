@@ -58,7 +58,8 @@ export type Action =
   | { type: 'draw' }
   | { type: 'takeOpen'; replace: string }
   | { type: 'swapDrawn'; replace: string }
-  | { type: 'discardDrawn' }
+  /** `usePower: false` puts a power card down without using it. */
+  | { type: 'discardDrawn'; usePower?: boolean }
   | { type: 'peek'; cardId: string }
   | { type: 'blindSwap'; own: string; other: string }
   | { type: 'openSwap'; swap: boolean }
@@ -249,7 +250,7 @@ export function apply(
 
     case 'discardDrawn': {
       const { card } = requireTurn('drawn') as Extract<Step, { kind: 'drawn' }>;
-      const power = powerOf(card, s.hardMode);
+      const power = action.usePower === false ? null : powerOf(card, s.hardMode);
       log(`${me.name} put down ${cardName(card)}${power ? ' and uses it' : ''}`);
       toDiscard(card, me);
       const opponentCards = s.players.some((p) => p !== me && !p.locked && p.hand.length);

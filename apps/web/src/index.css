@@ -74,19 +74,19 @@ button:disabled {
 .fan > :nth-child(4n + 3) { rotate: 2deg; }
 .fan > :nth-child(4n + 4) { rotate: 5deg; }
 
-/* A tappable card gets a chalk loop drawn around it. */
-.chalk-loop::after {
-  content: '';
-  position: absolute;
-  inset: -7px -8px;
-  border: 2.5px solid var(--color-chalk);
-  border-radius: 50% 45% 52% 48%;
-  rotate: -4deg;
-  opacity: 0.8;
-  pointer-events: none;
+/* Tappable cards: no mark at rest (the hint says what to tap); they lift on hover or keyboard focus. */
+.tappable {
+  transition: translate 0.15s;
 }
-.chalk-loop:hover::after {
-  opacity: 1;
+.tappable:focus-visible {
+  translate: 0 -4px;
+}
+@media (hover: hover) {
+  .tappable:hover {
+    translate: 0 -4px;
+    outline: 2.5px solid var(--color-chalk);
+    outline-offset: 2px;
+  }
 }
 
 /* A card someone just looked at: dashed outline plus a pulse, so it is not colour-only. */

@@ -166,7 +166,7 @@ export function Board({
                     mode.kind === 'takeOpen'
                       ? 'Tap the card to replace with the open card'
                       : 'Draw a card, take the open card, or swish-swish',
-                  drawn: `Tap one of your cards to swap it in, or ${drawnPower ? `use it: ${POWER_LABEL[drawnPower]}` : 'put it down'}`,
+                  drawn: `Tap one of your cards to swap it in, or ${drawnPower ? `use it (${POWER_LABEL[drawnPower]}) or put it down` : 'put it down'}`,
                   peekOwn: 'Tap one of your cards to look at it',
                   spy: "Tap an opponent's card to look at it",
                   blindSwap: mode.kind === 'blindOwn' ? "Now tap an opponent's card" : 'Tap one of your cards to blind-swap',
@@ -263,7 +263,7 @@ export function Board({
                 <PlayingCard card={{ id: view.stackTopId }} onClick={draw} />
               ) : (
                 // Empty but drawable: the draw shuffles the discard pile back in.
-                <button type="button" disabled={!draw} onClick={draw} aria-label={draw ? 'Shuffle the discard pile in and draw' : undefined} className={`relative ${draw ? 'chalk-loop' : ''}`}>
+                <button type="button" disabled={!draw} onClick={draw} aria-label={draw ? 'Shuffle the discard pile in and draw' : undefined} className={`relative ${draw ? 'tappable' : ''}`}>
                   <Slot label="empty" />
                 </button>
               )}
@@ -322,9 +322,16 @@ export function Board({
             </>
           )}
           {myTurn && step.kind === 'drawn' && (
-            <button className={button} onClick={() => act({ type: 'discardDrawn' })}>
-              {drawnPower ? 'Use it' : 'Put it down'}
-            </button>
+            <>
+              {drawnPower && (
+                <button className={button} onClick={() => act({ type: 'discardDrawn' })}>
+                  Use it
+                </button>
+              )}
+              <button className={button} onClick={() => act({ type: 'discardDrawn', usePower: false })}>
+                Put it down
+              </button>
+            </>
           )}
           {myTurn && step.kind === 'openSwap' && step.own && step.other && (
             <>

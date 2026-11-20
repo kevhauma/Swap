@@ -105,6 +105,20 @@ describe('server rooms', () => {
     await vi.waitFor(() => expect(first.c.closeCode).toBe(4000));
   });
 
+  it('removes a bot in the lobby, never a human, and reuses its name', async () => {
+    const { c, joined } = await join('BOTS', 'Alice');
+    c.send({ type: 'addBot' });
+    c.send({ type: 'addBot' });
+    const two = await latest(c, 'room', (m) => m.seats.length === 3);
+    c.send({ type: 'removeBot', seatId: two.seats[1].id });
+    await latest(c, 'room', (m) => m.seats.length === 2 && m.seats[1].name === 'Bot 2');
+    c.send({ type: 'removeBot', seatId: joined.playerId });
+    expect((await latest(c, 'error')).message).toBe('No such bot');
+    c.send({ type: 'addBot' });
+    // The new bot takes the free name: Alice, Bot 2, Bot 1.
+    await latest(c, 'room', (m) => m.seats.map((s) => s.name).join() === 'Alice,Bot 2,Bot 1');
+  });
+
   it('rejects the second of two matches on one open card as too late, without penalty', async () => {
     const alice = await join('RACE', 'Alice');
     const bob = await join('RACE', 'Bob');

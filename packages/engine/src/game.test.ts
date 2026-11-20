@@ -200,6 +200,16 @@ describe('powers', () => {
     return act(s, 'a', { type: 'discardDrawn' });
   };
 
+  it('a power card can be put down without using it, ending the turn', () => {
+    let s = table([['9H', '2H'], ['5S', '6S']], 'AD', ['JC', '6D']);
+    s = act(s, 'a', { type: 'draw' }).state;
+    const r = act(s, 'a', { type: 'discardDrawn', usePower: false });
+    expect(r.state.step.kind).toBe('choose');
+    expect(r.state.players[r.state.turn].id).toBe('b');
+    expect(r.state.discard.at(-1)!.id).toMatch(/^JC/);
+    expect(r.reveals).toEqual([]);
+  });
+
   it('7/8 look at one of your own cards, only you see it', () => {
     const { state } = usePower('7C');
     expect(state.step.kind).toBe('peekOwn');
